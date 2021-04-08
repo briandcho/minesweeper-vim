@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "minesweeper"
+version = "0.1.0"
+description = "Curses minesweeper with vim bindings"
+authors = ["Brian Cho <briandcho@yahoo.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+[tool.poetry.dev-dependencies]
+black = "^20.8b1"
+pytest-cov = "^2.11.1"
+pytest-pythonpath = "^0.7.3"
+hecate = "^0.1.0"
+
+[tool.pytest.ini_options]
+# addopts = "--cov minesweeper --cov tests --cov-branch --cov-report term-missing"
+testpaths = "tests"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
