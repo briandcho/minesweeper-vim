@@ -2,16 +2,6 @@ import curses
 from dataclasses import dataclass
 from typing import Callable, Generator, Optional, Protocol
 
-"""
-:q  QUIT
-h   LEFT
-j   DOWN
-k   UP
-l   RIGHT
-x   DELETE
-m   MARK
-"""
-
 
 def lex(get_char: Callable, echo: Callable) -> Generator:
     """
@@ -19,7 +9,7 @@ def lex(get_char: Callable, echo: Callable) -> Generator:
     ```mermaid
     graph LR
     subgraph lex
-        0((0))--"[$0HLMhjklx\n]"-->0
+        0((0))--"[$0HLMhjklmx\n]"-->0
         0--"[1-9]"-->1((1))
         0--:-->2((2))
         1--"[$0HLMhjklx\n]"-->0
@@ -35,7 +25,7 @@ def lex(get_char: Callable, echo: Callable) -> Generator:
     accept_states = [0]
     machine = [
         [
-            {"next_state": 0, "cond": lambda c: c in "$0HLMhjklx\n"},
+            {"next_state": 0, "cond": lambda c: c in "$0HLMhjklmx\n"},
             {"next_state": 1, "cond": lambda c: c in "123456789"},
             {"next_state": 2, "cond": lambda c: c == ":"},
         ],
@@ -83,6 +73,9 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
             stdscr.delch(cursor[0], cursor[1] + 1)
             stdscr.delch(cursor[0], cursor[1] - 1)
             stdscr.insstr(*cursor, "  ")
+        elif tok == "m":
+            stdscr.delch(*cursor)
+            stdscr.insstr(*cursor, "x")
         else:
             cursor = mv[tok](cursor)
             stdscr.move(*cursor)
