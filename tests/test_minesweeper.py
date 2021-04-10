@@ -12,12 +12,17 @@ def test_minesweeper_quit(runner):
     runner.await_exit()
 
 
-def test_minesweeper_movement(runner):
+def test_minesweeper_movement_and_invincible_marked_square(runner):
     runner.await_text("[ ]" * 10)
     runner.press("L")
     runner.press("$")
+    runner.press("h")
     runner.press("m")
-    assert runner.screenshot().strip().endswith("[x]")
+    runner.press("x")
+    runner.press("l")
+    runner.press("m")
+    runner.press("m")
+    assert runner.screenshot().strip().endswith("[x][ ]")
 
 
 @pytest.fixture

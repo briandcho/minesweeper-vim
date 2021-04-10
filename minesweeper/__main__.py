@@ -1,6 +1,10 @@
 import curses
-from dataclasses import dataclass
-from typing import Callable, Generator, Optional, Protocol
+import itertools
+from typing import Callable, Generator, List, Tuple
+
+from . import game
+
+MINE_FLAG = "x"
 
 
 def lex(get_char: Callable, echo: Callable) -> Generator:
@@ -49,10 +53,11 @@ def lex(get_char: Callable, echo: Callable) -> Generator:
 
 
 def c_main(stdscr: "curses._CursesWindow") -> int:
-    w, h = 10, 8
-    board = ("[ ]" * w + "\n") * h
+    w, h, n = 10, 8, 10
+    game_board = game.create_board(w, h, n)
+    ui_board = ("[ ]" * w + "\n") * h
+    stdscr.addstr(0, 0, f"MiNeSwEePeR\n{ui_board}")
     cursor = [1, 1]
-    stdscr.addstr(0, 0, f"MiNeSwEePeR\n{board}")
     stdscr.move(*cursor)
     mv = {
         "h": lambda yx: [yx[0], yx[1] - 3 if yx[1] > 1 else yx[1]],
@@ -69,17 +74,35 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
     for tok in lex(lambda: stdscr.get_wch(), lambda c: stdscr.echochar(c)):
         if tok == ":q\n":
             return 0
+        game_pos = cursor_to_xy(cursor)
+        sq = game_board[game_pos[1]][game_pos[0]]
         if tok == "x":
-            stdscr.delch(cursor[0], cursor[1] + 1)
-            stdscr.delch(cursor[0], cursor[1] - 1)
-            stdscr.insstr(*cursor, "  ")
+            if not sq.is_flag:
+                overwrite_square(stdscr, cursor, f" {sq.value} ")
+            if sq.value == "*":
+                stdscr.addstr(h + 1, 0, "Game Over")
+                stdscr.get_wch()
+                return 0
         elif tok == "m":
-            stdscr.delch(*cursor)
-            stdscr.insstr(*cursor, "x")
+            sq = game_board[game_pos[1]][game_pos[0]]
+            sq.is_flag = not sq.is_flag
+            v = MINE_FLAG if sq.is_flag else " "
+            overwrite_square(stdscr, cursor, f"[{v}]")
         else:
             cursor = mv[tok](cursor)
             stdscr.move(*cursor)
     return 0
+
+
+def overwrite_square(stdscr, cursor: Tuple, square: str):
+    for _ in range(3):
+        stdscr.delch(cursor[0], cursor[1] - 1)
+    stdscr.insstr(cursor[0], cursor[1] - 1, square)
+    stdscr.move(*cursor)
+
+
+def cursor_to_xy(cursor: Tuple) -> Tuple:
+    return (int((cursor[1] - 1) / 3), cursor[0] - 1)
 
 
 def main() -> int:
