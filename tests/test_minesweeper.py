@@ -12,7 +12,7 @@ def test_minesweeper_quit(runner):
     runner.await_exit()
 
 
-def test_minesweeper_movement_and_invincible_marked_square(runner):
+def test_minesweeper_movement_and_flag_square_invincible(runner):
     runner.await_text("[ ]" * 10)
     runner.press("L")
     runner.press("$")

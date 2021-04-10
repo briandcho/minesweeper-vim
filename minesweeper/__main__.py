@@ -2,7 +2,7 @@ import curses
 import itertools
 from typing import Callable, Generator, List, Tuple
 
-from . import game
+from minesweeper import game
 
 MINE_FLAG = "x"
 
@@ -86,6 +86,7 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
         elif tok == "m":
             sq = game_board[game_pos[1]][game_pos[0]]
             sq.is_flag = not sq.is_flag
+            game_board[game_pos[1]][game_pos[0]].is_flag = sq.is_flag
             v = MINE_FLAG if sq.is_flag else " "
             overwrite_square(stdscr, cursor, f"[{v}]")
         else:
@@ -94,14 +95,14 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
     return 0
 
 
-def overwrite_square(stdscr, cursor: Tuple, square: str):
+def overwrite_square(stdscr, cursor: List[int], square: str):
     for _ in range(3):
         stdscr.delch(cursor[0], cursor[1] - 1)
     stdscr.insstr(cursor[0], cursor[1] - 1, square)
     stdscr.move(*cursor)
 
 
-def cursor_to_xy(cursor: Tuple) -> Tuple:
+def cursor_to_xy(cursor: List[int]) -> Tuple:
     return (int((cursor[1] - 1) / 3), cursor[0] - 1)
 
 
