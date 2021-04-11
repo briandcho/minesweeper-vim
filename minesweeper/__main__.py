@@ -31,11 +31,11 @@ def lex(get_char: Callable, echo: Callable) -> Generator:
     accept_states = [0]
     machine = [
         [
-            {"next_state": 0, "cond": lambda c: c in "$0HLMhjklmx\n"},
+            {"next_state": 0, "cond": lambda c: c in "$0HLMbhjklmwx\n"},
             {"next_state": 1, "cond": lambda c: c in "123456789"},
             {"next_state": 2, "cond": lambda c: c == ":"},
         ],
-        [{"next_state": 0, "cond": lambda c: c in "$0HLMhjklx\n"}],
+        [{"next_state": 0, "cond": lambda c: c in "$0HLMbhjklwx\n"}],
         [{"next_state": 3, "cond": lambda c: c == "q"}],
         [{"next_state": 0, "cond": lambda c: c == "\n"}],
     ]

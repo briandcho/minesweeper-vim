@@ -28,6 +28,12 @@ def test_reveal_spaces(runner):
     )
 
 
+def test_win(runner):
+    runner.await_text("[ ]" * 10)
+    runner.write("xllxlllx$jjxLxkkkkkxkxL$hhhxkxkxkxkxhjjjxjxhx")
+    runner.await_text("Success")
+
+
 @pytest.fixture
 def runner():
     """Seed 1
@@ -36,9 +42,9 @@ def runner():
     1  1           1  *  1
     *  1           1  1  1
     1  1        1  1  2  1  1
-            1  2  *  3  *  2
-            1  *  2  4  *  3
-            1  1  1  2  *  2
+             1  2  *  3  *  2
+             1  *  2  4  *  3
+             1  1  1  2  *  2
     """
     with Runner(sys.executable, "-m", "minesweeper", "--seed", "1") as h:
         yield h
