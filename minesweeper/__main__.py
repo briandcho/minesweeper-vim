@@ -1,6 +1,8 @@
 import curses
 import itertools
-from typing import Callable, Generator, List, Tuple
+from typing import Callable, Generator, List, Optional, Tuple
+
+import typer
 
 from minesweeper import game
 
@@ -57,7 +59,7 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
     game_board = game.create_board(w, h, n)
     ui_board = ("[ ]" * w + "\n") * h
     stdscr.addstr(0, 0, f"MiNeSwEePeR\n{ui_board}")
-    cursor = [1, 1]
+    cursor = (1, 1)
     stdscr.move(*cursor)
     mv = {
         "h": lambda yx: [yx[0], yx[1] - 3 if yx[1] > 1 else yx[1]],
@@ -77,16 +79,15 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
         game_pos = cursor_to_xy(cursor)
         sq = game_board[game_pos[1]][game_pos[0]]
         if tok == "x":
-            if not sq.is_flag:
-                overwrite_square(stdscr, cursor, f" {sq.value} ")
-            if sq.value == "*":
+            reveal_square(stdscr, cursor, sq)
+            if sq.is_swept and sq.value == "*":
                 stdscr.addstr(h + 1, 0, "Game Over")
                 stdscr.get_wch()
                 return 0
+            if sq.value == " ":
+                reveal_spaces(stdscr, cursor, game_board)
         elif tok == "m":
-            sq = game_board[game_pos[1]][game_pos[0]]
             sq.is_flag = not sq.is_flag
-            game_board[game_pos[1]][game_pos[0]].is_flag = sq.is_flag
             v = MINE_FLAG if sq.is_flag else " "
             overwrite_square(stdscr, cursor, f"[{v}]")
         else:
@@ -95,20 +96,55 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
     return 0
 
 
-def overwrite_square(stdscr, cursor: List[int], square: str):
+def reveal_square(stdscr, cursor: Tuple[int, int], square: game.Square):
+    if square.is_flag:
+        return
+    overwrite_square(stdscr, cursor, f" {square.value} ")
+    square.is_swept = True
+
+
+def overwrite_square(stdscr, cursor: Tuple[int, int], square: str):
     for _ in range(3):
         stdscr.delch(cursor[0], cursor[1] - 1)
     stdscr.insstr(cursor[0], cursor[1] - 1, square)
     stdscr.move(*cursor)
 
 
-def cursor_to_xy(cursor: List[int]) -> Tuple:
+def reveal_spaces(stdscr: "curses._CursesWindow", cursor: Tuple[int, int], board: List):
+    unswept_squares = _get_unswept_squares(board, *cursor_to_xy(cursor))
+    for x, y in unswept_squares:
+        reveal_square(stdscr, xy_to_cursor(x, y), board[y][x])
+        if board[y][x].value == " ":
+            more_squares = set(_get_unswept_squares(board, x, y))
+            more_squares = more_squares.difference(set(unswept_squares))
+            unswept_squares.extend(more_squares)
+    stdscr.move(*cursor)
+
+
+def _get_unswept_squares(board: List, x: int, y: int) -> List[Tuple[int, int]]:
+    xys = game._get_surrounding_squares(board, x, y)
+    return [(x, y) for x, y in xys if not board[y][x].is_swept]
+
+
+def cursor_to_xy(cursor: Tuple[int, int]) -> Tuple[int, int]:
     return (int((cursor[1] - 1) / 3), cursor[0] - 1)
 
 
-def main() -> int:
+def xy_to_cursor(x: int, y: int) -> Tuple[int, int]:
+    return (y + 1, x * 3 + 1)
+
+
+def debug(stdscr, cursor, msg):
+    stdscr.addstr(0, 13, msg)
+    stdscr.clrtoeol()
+    stdscr.move(*cursor)
+
+
+def main(seed: int = typer.Option(0, help="seed for repeatable game")) -> int:
+    if seed:
+        game.random.seed(seed)
     return curses.wrapper(c_main)
 
 
 if __name__ == "__main__":
-    exit(main())
+    exit(typer.run(main))

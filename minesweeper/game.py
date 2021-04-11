@@ -1,6 +1,6 @@
 import random
 from dataclasses import dataclass
-from typing import List
+from typing import List, Tuple
 
 EASY = (10, 8, 10)
 MEDIUM = (18, 14, 40)
@@ -11,6 +11,7 @@ HARD = (24, 20, 99)
 class Square:
     value: str
     is_flag: bool = False
+    is_swept: bool = False
 
 
 def _to_squares(board):
@@ -36,6 +37,13 @@ def number_board(board: List):
 
 
 def bump_surrounding_squares(board: List, x: int, y: int):
+    for _x, _y in _get_surrounding_squares(board, x, y):
+        if board[_y][_x] != "*":
+            v = 1 if board[_y][_x] == " " else int(board[_y][_x]) + 1
+            board[_y][_x] = str(v)
+
+
+def _get_surrounding_squares(board: List, x: int, y: int) -> List[Tuple[int, int]]:
     surrounding_squares = [
         (x - 1, y - 1),
         (x, y - 1),
@@ -47,7 +55,4 @@ def bump_surrounding_squares(board: List, x: int, y: int):
         (x + 1, y + 1),
     ]
     h, w = len(board), len(board[0])
-    for _x, _y in surrounding_squares:
-        if 0 <= _x < w and 0 <= _y < h and board[_y][_x] != "*":
-            v = 1 if board[_y][_x] == " " else int(board[_y][_x]) + 1
-            board[_y][_x] = str(v)
+    return [(_x, _y) for _x, _y in surrounding_squares if 0 <= _x < w and 0 <= _y < h]

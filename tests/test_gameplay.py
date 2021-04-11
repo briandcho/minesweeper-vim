@@ -3,15 +3,6 @@ from minesweeper import game
 
 """game"""
 
-"""
-initial board shuffls mines and numbers mine-adjacent squares
-first sweep never explodes
-sweep of mine ends game
-sweep of mine-adjacent square shows 1
-sweep of non-mine-adjacent square shows blank
-sweep of blank square sweeps blank-adjacent squares
-"""
-
 
 def test_initial_board_shuffles_mines(mocker):
     assert game.create_board(*game.EASY) != game.create_board(*game.EASY)
