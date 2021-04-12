@@ -54,7 +54,7 @@ def lex(get_char: Callable, echo: Callable) -> Generator:
 
 
 def c_main(stdscr: "curses._CursesWindow") -> int:
-    w, h, n = 10, 8, 10
+    w, h, n = game.EASY
     game_board = game.create_board(w, h, n)
     ui_board = ("[ ]" * w + "\n") * h
     stdscr.addstr(0, 0, f"MiNeSwEePeR\n{ui_board}")
@@ -80,11 +80,11 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
         if tok == "x":
             reveal_cell(stdscr, cursor, sq)
             if sq.is_swept and sq.value == "*":
-                stdscr.addstr(h + 1, 0, "Game Over")
-                stdscr.get_wch()
-                return 0
+                return bye(stdscr, h + 1, 0, "Game Over")
             if sq.value == " ":
                 reveal_spaces(stdscr, cursor, game_board)
+            if game.is_win(game_board):
+                return bye(stdscr, h + 1, 0, "You win!")
         elif tok == "m":
             sq.is_flag = not sq.is_flag
             v = MINE_FLAG if sq.is_flag else " "
@@ -92,6 +92,12 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
         else:
             cursor = mv[tok](cursor)
             stdscr.move(*cursor)
+    return 0
+
+
+def bye(stdscr, y, x, msg):
+    stdscr.addstr(y, x, msg)
+    stdscr.get_wch()
     return 0
 
 

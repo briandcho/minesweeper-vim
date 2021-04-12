@@ -31,7 +31,7 @@ def test_reveal_spaces(runner):
 def test_win(runner):
     runner.await_text("[ ]" * 10)
     runner.write("xllxlllx$jjxLxkkkkkxkxL$hhhxkxkxkxkxhjjjxjxhx")
-    runner.await_text("Success")
+    runner.await_text("You win!")
 
 
 @pytest.fixture

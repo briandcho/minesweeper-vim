@@ -1,5 +1,6 @@
 import random
 from dataclasses import dataclass
+from itertools import chain
 from typing import List, Tuple
 
 EASY = (10, 8, 10)
@@ -19,6 +20,11 @@ def _to_cells(board):
     for row in board:
         rows += [[Cell(v) for v in row]]
     return rows
+
+
+def is_win(board: List[List[Cell]]) -> bool:
+    n = {EASY[1]: EASY, MEDIUM[1]: MEDIUM, HARD[1]: HARD}[len(board)][2]
+    return [cell.is_swept for cell in chain(*board)].count(False) == n
 
 
 def create_board(width: int, height: int, n_bombs: int):
