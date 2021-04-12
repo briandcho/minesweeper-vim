@@ -12,7 +12,7 @@ def test_minesweeper_quit(runner):
     runner.await_exit()
 
 
-def test_minesweeper_movement_and_flag_square_invincible(runner):
+def test_minesweeper_movement_and_flag_cell_invincible(runner):
     runner.await_text("[ ]" * 10)
     runner.write("L$hmxlmm")
     assert runner.screenshot().strip().endswith("[x][ ]")

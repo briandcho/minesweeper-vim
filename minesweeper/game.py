@@ -8,43 +8,43 @@ HARD = (24, 20, 99)
 
 
 @dataclass
-class Square:
+class Cell:
     value: str
     is_flag: bool = False
     is_swept: bool = False
 
 
-def _to_squares(board):
+def _to_cells(board):
     rows = []
     for row in board:
-        rows += [[Square(v) for v in row]]
+        rows += [[Cell(v) for v in row]]
     return rows
 
 
 def create_board(width: int, height: int, n_bombs: int):
-    squares = list("*" * n_bombs + " " * (width * height - n_bombs))
-    random.shuffle(squares)
-    board = [squares[row * width : row * width + width] for row in range(height)]
-    return _to_squares(number_board(board))
+    cells = list("*" * n_bombs + " " * (width * height - n_bombs))
+    random.shuffle(cells)
+    board = [cells[row * width : row * width + width] for row in range(height)]
+    return _to_cells(number_board(board))
 
 
 def number_board(board: List):
     for y, row in enumerate(board):
         for x, sq in enumerate(row):
             if sq == "*":
-                bump_surrounding_squares(board, x, y)
+                bump_neighbor_cells(board, x, y)
     return board
 
 
-def bump_surrounding_squares(board: List, x: int, y: int):
-    for _x, _y in _get_surrounding_squares(board, x, y):
+def bump_neighbor_cells(board: List, x: int, y: int):
+    for _x, _y in _get_neighbor_cells(board, x, y):
         if board[_y][_x] != "*":
             v = 1 if board[_y][_x] == " " else int(board[_y][_x]) + 1
             board[_y][_x] = str(v)
 
 
-def _get_surrounding_squares(board: List, x: int, y: int) -> List[Tuple[int, int]]:
-    surrounding_squares = [
+def _get_neighbor_cells(board: List, x: int, y: int) -> List[Tuple[int, int]]:
+    neighbor_cells = [
         (x - 1, y - 1),
         (x, y - 1),
         (x + 1, y - 1),
@@ -55,4 +55,4 @@ def _get_surrounding_squares(board: List, x: int, y: int) -> List[Tuple[int, int
         (x + 1, y + 1),
     ]
     h, w = len(board), len(board[0])
-    return [(_x, _y) for _x, _y in surrounding_squares if 0 <= _x < w and 0 <= _y < h]
+    return [(_x, _y) for _x, _y in neighbor_cells if 0 <= _x < w and 0 <= _y < h]

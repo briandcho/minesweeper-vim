@@ -8,9 +8,9 @@ def test_initial_board_shuffles_mines(mocker):
     assert game.create_board(*game.EASY) != game.create_board(*game.EASY)
 
 
-def test_initial_board_numbers_mine_adjacent_squares(mocker):
+def test_initial_board_numbers_mine_adjacent_cells(mocker):
     mocker.patch("minesweeper.game.random")
-    assert game.create_board(*game.EASY) == game._to_squares(
+    assert game.create_board(*game.EASY) == game._to_cells(
         [
             ["*", "*", "*", "*", "*", "*", "*", "*", "*", "*"],
             ["2", "3", "3", "3", "3", "3", "3", "3", "3", "2"],

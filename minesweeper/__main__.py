@@ -1,5 +1,4 @@
 import curses
-import itertools
 from typing import Callable, Generator, List, Optional, Tuple
 
 import typer
@@ -79,7 +78,7 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
         game_pos = cursor_to_xy(cursor)
         sq = game_board[game_pos[1]][game_pos[0]]
         if tok == "x":
-            reveal_square(stdscr, cursor, sq)
+            reveal_cell(stdscr, cursor, sq)
             if sq.is_swept and sq.value == "*":
                 stdscr.addstr(h + 1, 0, "Game Over")
                 stdscr.get_wch()
@@ -89,40 +88,40 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
         elif tok == "m":
             sq.is_flag = not sq.is_flag
             v = MINE_FLAG if sq.is_flag else " "
-            overwrite_square(stdscr, cursor, f"[{v}]")
+            overwrite_cell(stdscr, cursor, f"[{v}]")
         else:
             cursor = mv[tok](cursor)
             stdscr.move(*cursor)
     return 0
 
 
-def reveal_square(stdscr, cursor: Tuple[int, int], square: game.Square):
-    if square.is_flag:
+def reveal_cell(stdscr, cursor: Tuple[int, int], cell: game.Cell):
+    if cell.is_flag:
         return
-    overwrite_square(stdscr, cursor, f" {square.value} ")
-    square.is_swept = True
+    overwrite_cell(stdscr, cursor, f" {cell.value} ")
+    cell.is_swept = True
 
 
-def overwrite_square(stdscr, cursor: Tuple[int, int], square: str):
+def overwrite_cell(stdscr, cursor: Tuple[int, int], cell: str):
     for _ in range(3):
         stdscr.delch(cursor[0], cursor[1] - 1)
-    stdscr.insstr(cursor[0], cursor[1] - 1, square)
+    stdscr.insstr(cursor[0], cursor[1] - 1, cell)
     stdscr.move(*cursor)
 
 
 def reveal_spaces(stdscr: "curses._CursesWindow", cursor: Tuple[int, int], board: List):
-    unswept_squares = _get_unswept_squares(board, *cursor_to_xy(cursor))
-    for x, y in unswept_squares:
-        reveal_square(stdscr, xy_to_cursor(x, y), board[y][x])
+    unswept_cells = _get_unswept_cells(board, *cursor_to_xy(cursor))
+    for x, y in unswept_cells:
+        reveal_cell(stdscr, xy_to_cursor(x, y), board[y][x])
         if board[y][x].value == " ":
-            more_squares = set(_get_unswept_squares(board, x, y))
-            more_squares = more_squares.difference(set(unswept_squares))
-            unswept_squares.extend(more_squares)
+            more_cells = set(_get_unswept_cells(board, x, y))
+            more_cells = more_cells.difference(set(unswept_cells))
+            unswept_cells.extend(more_cells)
     stdscr.move(*cursor)
 
 
-def _get_unswept_squares(board: List, x: int, y: int) -> List[Tuple[int, int]]:
-    xys = game._get_surrounding_squares(board, x, y)
+def _get_unswept_cells(board: List, x: int, y: int) -> List[Tuple[int, int]]:
+    xys = game._get_neighbor_cells(board, x, y)
     return [(x, y) for x, y in xys if not board[y][x].is_swept]
 
 
