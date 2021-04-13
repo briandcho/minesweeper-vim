@@ -1,5 +1,7 @@
 import curses
-from typing import Callable, Generator, List, Optional, Tuple
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Callable, Generator, List, Tuple
 
 import typer
 
@@ -8,16 +10,22 @@ from minesweeper import game
 MINE_FLAG = "x"
 
 
-def lex(get_char: Callable, echo: Callable) -> Generator:
+@dataclass
+class StateRule:
+    next_state: int
+    cond: Callable
+
+
+def lex(stdscr) -> Generator:
     """
-    /[$0HLM]|[1-9]?[hjklx\n]|:\S+/
+    /[$0HLM]|[1-9]?[bhjklmwx\n]|:\S+/
     ```mermaid
     graph LR
     subgraph lex
-        0((0))--"[$0HLMhjklmx\n]"-->0
+        0((0))--"[$0HLMbhjklmwx\n]"-->0
         0--"[1-9]"-->1((1))
         0--:-->2((2))
-        1--"[$0HLMhjklx\n]"-->0
+        1--"[$0HLMbhjklmwx\n]"-->0
         2--"q"-->3
         3--"\n"-->0
     end
@@ -30,36 +38,45 @@ def lex(get_char: Callable, echo: Callable) -> Generator:
     accept_states = [0]
     machine = [
         [
-            {"next_state": 0, "cond": lambda c: c in "$0HLMbhjklmwx\n"},
-            {"next_state": 1, "cond": lambda c: c in "123456789"},
-            {"next_state": 2, "cond": lambda c: c == ":"},
+            StateRule(0, lambda c: c in "$0HLMbhjklmwx\n"),
+            StateRule(1, lambda c: c in "123456789"),
+            StateRule(2, lambda c: c == ":"),
         ],
-        [{"next_state": 0, "cond": lambda c: c in "$0HLMbhjklwx\n"}],
-        [{"next_state": 3, "cond": lambda c: c == "q"}],
-        [{"next_state": 0, "cond": lambda c: c == "\n"}],
+        [StateRule(0, lambda c: c in "$0HLMbhjklwx\n")],
+        [StateRule(3, lambda c: c == "q")],
+        [StateRule(0, lambda c: c == "\n")],
     ]
+    start_time = None
     while True:
-        c = get_char()
         try:
-            rule = next(rule for rule in machine[state] if rule["cond"](c))
+            if start_time:
+                elapsed_time = datetime.now() - start_time
+                overwrite_str(stdscr, 27, 0, f"{elapsed_time.seconds:03}")
+            c = stdscr.get_wch()
+            rule = next(rule for rule in machine[state] if rule.cond(c))
+        except curses.error:
+            continue
         except StopIteration:
             raise AssertionError(repr(c))
+        if not start_time:
+            start_time = datetime.now()
         tok += c
-        if rule["next_state"] in [2, 3]:
-            echo(c)
-        elif rule["next_state"] in accept_states:
+        if rule.next_state in [2, 3]:
+            stdscr.echochar(c)
+        elif rule.next_state in accept_states:
             yield tok
             tok = ""
-        state = rule["next_state"]
+        state = rule.next_state
 
 
 def c_main(stdscr: "curses._CursesWindow") -> int:
     w, h, n = game.EASY
     game_board = game.create_board(w, h, n)
     ui_board = ("[ ]" * w + "\n") * h
-    stdscr.addstr(0, 0, f"MiNeSwEePeR\n{ui_board}")
+    stdscr.addstr(0, 0, f"MiNeSwEePeR{' '*16}000\n{ui_board}")
     cursor = (1, 1)
     stdscr.move(*cursor)
+    stdscr.nodelay(True)
     mv = {
         "h": lambda yx: [yx[0], yx[1] - 3 if yx[1] > 1 else yx[1]],
         "j": lambda yx: [yx[0] + 1 if yx[0] < h else yx[0], yx[1]],
@@ -72,7 +89,7 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
         "L": lambda _: [h, 1],
         "M": lambda _: [int(h / 2), 1],
     }
-    for tok in lex(lambda: stdscr.get_wch(), lambda c: stdscr.echochar(c)):
+    for tok in lex(stdscr):
         if tok == ":q\n":
             return 0
         game_pos = cursor_to_xy(cursor)
@@ -97,6 +114,7 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
 
 def bye(stdscr, y, x, msg):
     stdscr.addstr(y, x, msg)
+    stdscr.nodelay(False)
     stdscr.get_wch()
     return 0
 
@@ -109,9 +127,14 @@ def reveal_cell(stdscr, cursor: Tuple[int, int], cell: game.Cell):
 
 
 def overwrite_cell(stdscr, cursor: Tuple[int, int], cell: str):
-    for _ in range(3):
-        stdscr.delch(cursor[0], cursor[1] - 1)
-    stdscr.insstr(cursor[0], cursor[1] - 1, cell)
+    overwrite_str(stdscr, cursor[1] - 1, cursor[0], cell)
+
+
+def overwrite_str(stdscr: "curses._CursesWindow", x: int, y: int, s: str):
+    cursor = stdscr.getyx()
+    for _ in range(len(s)):
+        stdscr.delch(y, x)
+    stdscr.insstr(y, x, s)
     stdscr.move(*cursor)
 
 
