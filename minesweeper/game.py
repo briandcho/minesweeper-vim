@@ -22,6 +22,19 @@ def _to_cells(board):
     return rows
 
 
+def next_unswept(board: List[List[Cell]], x: int, y: int) -> Tuple[int, int]:
+    h, w = len(board), len(board[0])
+    i = next((i for i in range(x, w) if board[y][i].is_swept), x)
+    i = next((i for i in range(i, w) if not board[y][i].is_swept), x)
+    if i == x:
+        if y + 1 < h:
+            y += 1
+            i = next((i for i in range(0, w) if not board[y][i].is_swept), 0)
+        else:
+            i = w - 1
+    return (i, y)
+
+
 def is_win(board: List[List[Cell]]) -> bool:
     n = {EASY[1]: EASY, MEDIUM[1]: MEDIUM, HARD[1]: HARD}[len(board)][2]
     return [cell.is_swept for cell in chain(*board)].count(False) == n

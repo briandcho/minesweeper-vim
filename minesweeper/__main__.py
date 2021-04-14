@@ -92,8 +92,8 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
     for tok in lex(stdscr):
         if tok == ":q\n":
             return 0
-        game_pos = cursor_to_xy(cursor)
-        sq = game_board[game_pos[1]][game_pos[0]]
+        x, y = cursor_to_xy(cursor)
+        sq = game_board[y][x]
         if tok == "x":
             reveal_cell(stdscr, cursor, sq)
             if sq.is_swept and sq.value == "*":
@@ -106,6 +106,9 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
             sq.is_flag = not sq.is_flag
             v = MINE_FLAG if sq.is_flag else " "
             overwrite_cell(stdscr, cursor, f"[{v}]")
+        elif tok == "w":
+            cursor = xy_to_cursor(*game.next_unswept(game_board, x, y))
+            stdscr.move(*cursor)
         else:
             cursor = mv[tok](cursor)
             stdscr.move(*cursor)

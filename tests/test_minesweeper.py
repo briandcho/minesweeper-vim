@@ -33,7 +33,7 @@ def test_win(runner):
     assert runner.screenshot().split("\n")[0].endswith("000")
     runner.write("x")
     sleep(1)
-    runner.write("llxlllx$jjxLxkkkkkxkxL$hhhxkxkxkxkxhjjjxjxhx")
+    runner.write("xjxjxllxkkxlllxMwx$xwxjxjxjxhxkxhjx")
     runner.await_text("You win!")
     assert not runner.screenshot().split("\n")[0].endswith("000")
 
