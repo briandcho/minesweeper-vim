@@ -6,7 +6,7 @@ authors = ["Brian Cho <briandcho@yahoo.com>"]
 license = "MIT"
 
 [tool.poetry.scripts]
-minesweeper-vim = "minesweeper_vim"
+minesweeper-vim = "minesweeper_vim.ui:run"
 
 [tool.poetry.dependencies]
 python = "^3.8"
