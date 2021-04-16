@@ -28,6 +28,15 @@ def test_reveal_spaces(runner):
     ]
 
 
+def test_reveal_unmarked(runner):
+    runner.await_text("[ ]" * 10)
+    runner.write("xlmhx")
+    assert runner.screenshot().split("\n")[1:3] == [
+        " 1 [x][ ][ ][ ][ ][ ][ ][ ][ ]",
+        " 1  1 [ ][ ][ ][ ][ ][ ][ ][ ]",
+    ]
+
+
 def test_win(runner):
     runner.await_text("[ ]" * 10)
     assert runner.screenshot().split("\n")[0].endswith("000")

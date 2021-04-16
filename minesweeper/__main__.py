@@ -95,7 +95,10 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
         x, y = cursor_to_xy(cursor)
         sq = game_board[y][x]
         if tok == "x":
-            reveal_cell(stdscr, cursor, sq)
+            if sq.is_swept and sq.value in "12345678":
+                reveal_unmarked(stdscr, cursor, game_board)
+            else:
+                reveal_cell(stdscr, cursor, sq)
             if sq.is_swept and sq.value == "*":
                 return bye(stdscr, h + 1, 0, "Game Over")
             if sq.value == " ":
@@ -103,6 +106,8 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
             if game.is_win(game_board):
                 return bye(stdscr, h + 1, 0, "You win!")
         elif tok == "m":
+            if sq.is_swept:
+                continue
             sq.is_flag = not sq.is_flag
             v = MINE_FLAG if sq.is_flag else " "
             overwrite_cell(stdscr, cursor, f"[{v}]")
@@ -113,6 +118,21 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
             cursor = mv[tok](cursor)
             stdscr.move(*cursor)
     return 0
+
+
+def sweep_cell(
+    stdscr: "curses._CursesWindow",
+    cursor: Tuple[int, int],
+    board: List[List[game.Cell]],
+):
+    x, y = cursor_to_xy(cursor)
+    cell = board[y][x]
+    if cell.is_swept and cell.value in "12345678":
+        reveal_unmarked(stdscr, cursor, board)
+    else:
+        reveal_cell(stdscr, cursor, cell)
+    if cell.is_swept and cell.value == "*":
+        raise AssertionError("Game Over")
 
 
 def bye(stdscr, y, x, msg):
@@ -150,6 +170,23 @@ def reveal_spaces(stdscr: "curses._CursesWindow", cursor: Tuple[int, int], board
             more_cells = more_cells.difference(set(unswept_cells))
             unswept_cells.extend(more_cells)
     stdscr.move(*cursor)
+
+
+def reveal_unmarked(
+    stdscr: "curses._CursesWindow", cursor: Tuple[int, int], board: List
+):
+    x, y = cursor_to_xy(cursor)
+    unswept_cells = _get_unswept_cells(board, x, y)
+    n_flags = [board[y][x].is_flag for (x, y) in unswept_cells].count(True)
+    if n_flags != int(board[y][x].value):
+        return
+    unmarked_cells = [(x, y) for x, y in unswept_cells if not board[y][x].is_flag]
+    for x, y in unmarked_cells:
+        reveal_cell(stdscr, xy_to_cursor(x, y), board[y][x])
+        if board[y][x].value == " ":
+            more_cells = set(_get_unswept_cells(board, x, y))
+            more_cells = more_cells.difference(set(unmarked_cells))
+            unmarked_cells.extend(more_cells)
 
 
 def _get_unswept_cells(board: List, x: int, y: int) -> List[Tuple[int, int]]:
