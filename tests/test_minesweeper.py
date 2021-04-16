@@ -59,5 +59,5 @@ def runner():
              1  *  2  4  *  3
              1  1  1  2  *  2
     """
-    with Runner(sys.executable, "-m", "minesweeper", "--seed", "1") as h:
+    with Runner(sys.executable, "-m", "minesweeper_vim", "--seed", "1") as h:
         yield h

@@ -1,5 +1,5 @@
 import pytest
-from minesweeper import game
+from minesweeper_vim import game
 
 """game"""
 
@@ -9,7 +9,7 @@ def test_initial_board_shuffles_mines(mocker):
 
 
 def test_initial_board_numbers_mine_adjacent_cells(mocker):
-    mocker.patch("minesweeper.game.random")
+    mocker.patch("minesweeper_vim.game.random")
     assert game.create_board(*game.EASY) == game._to_cells(
         [
             ["*", "*", "*", "*", "*", "*", "*", "*", "*", "*"],

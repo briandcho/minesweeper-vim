@@ -5,7 +5,7 @@ from typing import Callable, Generator, List, Tuple
 
 import typer
 
-from minesweeper import game
+from minesweeper_vim import game
 
 MINE_FLAG = "x"
 
@@ -214,5 +214,9 @@ def main(seed: int = typer.Option(0, help="seed for repeatable game")) -> int:
     return curses.wrapper(c_main)
 
 
-if __name__ == "__main__":
+def run():
     exit(typer.run(main))
+
+
+if __name__ == "__main__":
+    run()
