@@ -15,7 +15,25 @@ class Cell:
     is_swept: bool = False
 
 
-def _to_cells(board):
+Board = List[List[Cell]]
+
+
+@dataclass
+class Game:
+    width: int
+    height: int
+    n_mines: int
+    board: Board
+
+
+def create_game(width: int, height: int, n_mines: int) -> Game:
+    cells = list("*" * n_mines + " " * (width * height - n_mines))
+    random.shuffle(cells)
+    board = [cells[row * width : row * width + width] for row in range(height)]
+    return Game(width, height, n_mines, _to_cells(number_board(board)))
+
+
+def _to_cells(board) -> Board:
     rows = []
     for row in board:
         rows += [[Cell(v) for v in row]]
@@ -38,13 +56,6 @@ def next_unswept(board: List[List[Cell]], x: int, y: int) -> Tuple[int, int]:
 def is_win(board: List[List[Cell]]) -> bool:
     n = {EASY[1]: EASY, MEDIUM[1]: MEDIUM, HARD[1]: HARD}[len(board)][2]
     return [cell.is_swept for cell in chain(*board)].count(False) == n
-
-
-def create_board(width: int, height: int, n_bombs: int):
-    cells = list("*" * n_bombs + " " * (width * height - n_bombs))
-    random.shuffle(cells)
-    board = [cells[row * width : row * width + width] for row in range(height)]
-    return _to_cells(number_board(board))
 
 
 def number_board(board: List):

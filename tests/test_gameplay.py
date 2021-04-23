@@ -5,12 +5,14 @@ from minesweeper_vim import game
 
 
 def test_initial_board_shuffles_mines(mocker):
-    assert game.create_board(*game.EASY) != game.create_board(*game.EASY)
+    game_ = game.create_game(*game.EASY)
+    assert game_.board == game_.board
+    assert game.create_game(*game.EASY).board != game.create_game(*game.EASY).board
 
 
 def test_initial_board_numbers_mine_adjacent_cells(mocker):
     mocker.patch("minesweeper_vim.game.random")
-    assert game.create_board(*game.EASY) == game._to_cells(
+    assert game.create_game(*game.EASY).board == game._to_cells(
         [
             ["*", "*", "*", "*", "*", "*", "*", "*", "*", "*"],
             ["2", "3", "3", "3", "3", "3", "3", "3", "3", "2"],

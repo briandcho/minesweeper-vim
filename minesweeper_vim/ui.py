@@ -1,4 +1,5 @@
 import curses
+from collections import namedtuple
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Callable, Generator, List, Tuple
@@ -69,70 +70,99 @@ def lex(stdscr) -> Generator:
         state = rule.next_state
 
 
-def c_main(stdscr: "curses._CursesWindow") -> int:
-    w, h, n = game.EASY
-    game_board = game.create_board(w, h, n)
-    ui_board = ("[ ]" * w + "\n") * h
-    stdscr.addstr(0, 0, f"MiNeSwEePeR{' '*16}000\n{ui_board}")
-    cursor = (1, 1)
-    stdscr.move(*cursor)
+"""
+register clock listener
+register key press listeners
+event loop:
+  input next char (don't block)
+  invoke listeners
+
+"h" listener -> move cursor left once within left bound
+"""
+
+
+def event_loop(stdscr: "curses._CursesWindow", callback: Callable):
     stdscr.nodelay(True)
+    while True:
+        try:
+            c = stdscr.get_wch()
+        except curses.error:
+            pass
+        except StopIteration:
+            raise AssertionError(repr(c))
+
+
+Cursor = namedtuple("Cursor", ["y", "x"])
+
+
+CELL_STR = "[ ]"
+
+
+@dataclass
+class GameApp:
+    stdscr: "curses._CursesWindow"
+    game: game.Game
+    cursor: Cursor = Cursor(1, 1)
+
+    def __post_init__(self):
+        ui_board = (CELL_STR * self.game.width + "\n") * self.game.height
+        self.stdscr.addstr(0, 0, f"MiNeSwEePeR{' '*16}000\n{ui_board}")
+        self.stdscr.move(*self.cursor)
+
+
+def c_main(stdscr: "curses._CursesWindow") -> int:
+    app = GameApp(stdscr, game.create_game(*game.EASY))
     mv = {
-        "h": lambda yx: [yx[0], yx[1] - 3 if yx[1] > 1 else yx[1]],
-        "j": lambda yx: [yx[0] + 1 if yx[0] < h else yx[0], yx[1]],
-        "k": lambda yx: [yx[0] - 1 if yx[0] > 1 else yx[0], yx[1]],
-        "l": lambda yx: [yx[0], yx[1] + 3 if yx[1] < (w - 1) * 3 else yx[1]],
-        "\n": lambda yx: [yx[0] + 1, 1] if yx[0] < h else yx,
-        "0": lambda yx: [yx[0], 1],
-        "$": lambda yx: [yx[0], w * 3 - 2],
-        "H": lambda _: [1, 1],
-        "L": lambda _: [h, 1],
-        "M": lambda _: [int(h / 2), 1],
+        "h": lambda yx: (yx.y, yx.x - 3) if yx.x > 1 else yx,
+        "j": lambda yx: (yx.y + 1, yx.x) if yx.y < app.game.height else yx,
+        "k": lambda yx: (yx.y - 1, yx.x) if yx.y > 1 else yx,
+        "l": lambda yx: (yx.y, yx.x + 3) if yx.x < (app.game.width - 1) * 3 else yx,
+        "\n": lambda yx: (yx.y + 1, 1) if yx.y < app.game.height else yx,
+        "0": lambda yx: (yx.y, 1),
+        "$": lambda yx: (yx.y, app.game.width * 3 - 2),
+        "H": lambda _: (1, 1),
+        "L": lambda _: (app.game.height, 1),
+        "M": lambda _: (int(app.game.height / 2), 1),
     }
     for tok in lex(stdscr):
         if tok == ":q\n":
             return 0
-        x, y = cursor_to_xy(cursor)
-        sq = game_board[y][x]
+        x, y = cursor_to_xy(app.cursor)
+        sq = app.game.board[y][x]
         if tok == "x":
             if sq.is_swept and sq.value in "12345678":
-                reveal_unmarked(stdscr, cursor, game_board)
+                reveal_unmarked_neighbors(stdscr, app.cursor, app.game.board)
             else:
-                reveal_cell(stdscr, cursor, sq)
+                reveal_cell(stdscr, app.cursor, sq)
             if sq.is_swept and sq.value == "*":
-                return bye(stdscr, h + 1, 0, "Game Over")
+                return bye(stdscr, app.game.height + 1, 0, "Game Over")
             if sq.value == " ":
-                reveal_spaces(stdscr, cursor, game_board)
-            if game.is_win(game_board):
-                return bye(stdscr, h + 1, 0, "You win!")
+                reveal_spaces(stdscr, app.cursor, app.game.board)
+            if game.is_win(app.game.board):
+                return bye(stdscr, app.game.height + 1, 0, "You win!")
         elif tok == "m":
             if sq.is_swept:
                 continue
             sq.is_flag = not sq.is_flag
             v = MINE_FLAG if sq.is_flag else " "
-            overwrite_cell(stdscr, cursor, f"[{v}]")
+            overwrite_cell(stdscr, app.cursor, f"[{v}]")
         elif tok == "w":
-            cursor = xy_to_cursor(*game.next_unswept(game_board, x, y))
-            stdscr.move(*cursor)
+            app.cursor = Cursor(*xy_to_cursor(*game.next_unswept(app.game.board, x, y)))
+            stdscr.move(*app.cursor)
         else:
-            cursor = mv[tok](cursor)
-            stdscr.move(*cursor)
+            app.cursor = Cursor(*mv[tok](app.cursor))
+            stdscr.move(*app.cursor)
     return 0
 
 
 def sweep_cell(
     stdscr: "curses._CursesWindow",
+    cell: game.Cell,
     cursor: Tuple[int, int],
-    board: List[List[game.Cell]],
+    board: List,
 ):
-    x, y = cursor_to_xy(cursor)
-    cell = board[y][x]
     if cell.is_swept and cell.value in "12345678":
-        reveal_unmarked(stdscr, cursor, board)
-    else:
-        reveal_cell(stdscr, cursor, cell)
-    if cell.is_swept and cell.value == "*":
-        raise AssertionError("Game Over")
+        reveal_unmarked_neighbors(stdscr, cursor, board)
 
 
 def bye(stdscr, y, x, msg):
@@ -147,6 +177,23 @@ def reveal_cell(stdscr, cursor: Tuple[int, int], cell: game.Cell):
         return
     overwrite_cell(stdscr, cursor, f" {cell.value} ")
     cell.is_swept = True
+
+
+def reveal_unmarked_neighbors(
+    stdscr: "curses._CursesWindow", cursor: Tuple[int, int], board: List
+):
+    x, y = cursor_to_xy(cursor)
+    unswept_cells = _get_unswept_cells(board, x, y)
+    n_flags = [board[y][x].is_flag for (x, y) in unswept_cells].count(True)
+    if n_flags != int(board[y][x].value):
+        return
+    unmarked_cells = [(x, y) for x, y in unswept_cells if not board[y][x].is_flag]
+    for x, y in unmarked_cells:
+        reveal_cell(stdscr, xy_to_cursor(x, y), board[y][x])
+        if board[y][x].value == " ":
+            more_cells = set(_get_unswept_cells(board, x, y))
+            more_cells = more_cells.difference(set(unmarked_cells))
+            unmarked_cells.extend(more_cells)
 
 
 def overwrite_cell(stdscr, cursor: Tuple[int, int], cell: str):
@@ -170,23 +217,6 @@ def reveal_spaces(stdscr: "curses._CursesWindow", cursor: Tuple[int, int], board
             more_cells = more_cells.difference(set(unswept_cells))
             unswept_cells.extend(more_cells)
     stdscr.move(*cursor)
-
-
-def reveal_unmarked(
-    stdscr: "curses._CursesWindow", cursor: Tuple[int, int], board: List
-):
-    x, y = cursor_to_xy(cursor)
-    unswept_cells = _get_unswept_cells(board, x, y)
-    n_flags = [board[y][x].is_flag for (x, y) in unswept_cells].count(True)
-    if n_flags != int(board[y][x].value):
-        return
-    unmarked_cells = [(x, y) for x, y in unswept_cells if not board[y][x].is_flag]
-    for x, y in unmarked_cells:
-        reveal_cell(stdscr, xy_to_cursor(x, y), board[y][x])
-        if board[y][x].value == " ":
-            more_cells = set(_get_unswept_cells(board, x, y))
-            more_cells = more_cells.difference(set(unmarked_cells))
-            unmarked_cells.extend(more_cells)
 
 
 def _get_unswept_cells(board: List, x: int, y: int) -> List[Tuple[int, int]]:
