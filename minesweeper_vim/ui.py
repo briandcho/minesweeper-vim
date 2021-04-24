@@ -175,11 +175,11 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
             else:
                 app.reveal_cell()
             if app.active_cell.is_swept and app.active_cell.value == "*":
-                return bye(stdscr, app.game.height + 1, 0, "Game Over")
+                return bye(app, "Game Over")
             if app.active_cell.value == " ":
                 reveal_spaces(app)
             if game.is_win(app.game.board):
-                return bye(stdscr, app.game.height + 1, 0, "You win!")
+                return bye(app, "You win!")
         elif tok == "m":
             app.mark_cell()
         elif tok == "w":
@@ -190,16 +190,9 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
     return 0
 
 
-def bye(stdscr, y, x, msg):
-    stdscr.addstr(y, x, msg)
-    stdscr.nodelay(False)
-    stdscr.get_wch()
-    return 0
-
-
 def reveal_unmarked_neighbors(app: GameApp):
     x, y = app.cursor.to_model()
-    unswept_cells = _get_unswept_cells(app.game.board, x, y)
+    unswept_cells = game.get_unswept_neighbor_cells(app.game.board, x, y)
     n_flags = [app.game.board[y][x].is_flag for (x, y) in unswept_cells].count(True)
     if n_flags != int(app.active_cell.value):
         return
@@ -209,9 +202,27 @@ def reveal_unmarked_neighbors(app: GameApp):
     for x, y in unmarked_cells:
         app.reveal_cell(Cursor.from_model(x, y))
         if app.game.board[y][x].value == " ":
-            more_cells = set(_get_unswept_cells(app.game.board, x, y))
+            more_cells = set(game.get_unswept_neighbor_cells(app.game.board, x, y))
             more_cells = more_cells.difference(set(unmarked_cells))
             unmarked_cells.extend(more_cells)
+
+
+def reveal_spaces(app: GameApp):
+    x, y = app.cursor.to_model()
+    unswept_cells = game.get_unswept_neighbor_cells(app.game.board, x, y)
+    for x, y in unswept_cells:
+        app.reveal_cell(Cursor.from_model(x, y))
+        if app.cell_at(Cursor.from_model(x, y)).value == " ":
+            more_cells = set(game.get_unswept_neighbor_cells(app.game.board, x, y))
+            more_cells = more_cells.difference(set(unswept_cells))
+            unswept_cells.extend(more_cells)
+
+
+def bye(app: GameApp, msg: str):
+    app.stdscr.addstr(app.game.height + 1, 0, msg)
+    app.stdscr.nodelay(False)
+    app.stdscr.get_wch()
+    return 0
 
 
 def overwrite_str(stdscr: "curses._CursesWindow", x: int, y: int, s: str):
@@ -220,21 +231,6 @@ def overwrite_str(stdscr: "curses._CursesWindow", x: int, y: int, s: str):
         stdscr.delch(y, x)
     stdscr.insstr(y, x, s)
     stdscr.move(*cursor)
-
-
-def reveal_spaces(app: GameApp):
-    unswept_cells = _get_unswept_cells(app.game.board, *app.cursor.to_model())
-    for x, y in unswept_cells:
-        app.reveal_cell(Cursor.from_model(x, y))
-        if app.cell_at(Cursor.from_model(x, y)).value == " ":
-            more_cells = set(_get_unswept_cells(app.game.board, x, y))
-            more_cells = more_cells.difference(set(unswept_cells))
-            unswept_cells.extend(more_cells)
-
-
-def _get_unswept_cells(board: List, x: int, y: int) -> List[Tuple[int, int]]:
-    xys = game._get_neighbor_cells(board, x, y)
-    return [(x, y) for x, y in xys if not board[y][x].is_swept]
 
 
 def debug(stdscr, cursor, msg):

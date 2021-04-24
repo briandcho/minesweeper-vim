@@ -67,13 +67,18 @@ def number_board(board: List):
 
 
 def bump_neighbor_cells(board: List, x: int, y: int):
-    for _x, _y in _get_neighbor_cells(board, x, y):
+    for _x, _y in get_neighbor_cells(board, x, y):
         if board[_y][_x] != "*":
             v = 1 if board[_y][_x] == " " else int(board[_y][_x]) + 1
             board[_y][_x] = str(v)
 
 
-def _get_neighbor_cells(board: List, x: int, y: int) -> List[Tuple[int, int]]:
+def get_unswept_neighbor_cells(board: List, x: int, y: int) -> List[Tuple[int, int]]:
+    xys = get_neighbor_cells(board, x, y)
+    return [(x, y) for x, y in xys if not board[y][x].is_swept]
+
+
+def get_neighbor_cells(board: List, x: int, y: int) -> List[Tuple[int, int]]:
     neighbor_cells = [
         (x - 1, y - 1),
         (x, y - 1),
