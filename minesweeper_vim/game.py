@@ -59,6 +59,19 @@ def next_unswept(board: List[List[Cell]], x: int, y: int) -> Tuple[int, int]:
     return (i, y)
 
 
+def prev_unswept(board: List[List[Cell]], x: int, y: int) -> Tuple[int, int]:
+    w = len(board[0])
+    i = next((i for i in reversed(range(0, x + 1)) if board[y][i].is_swept), x)
+    i = next((i for i in reversed(range(0, i + 1)) if not board[y][i].is_swept), x)
+    if i == x:
+        if y - 1 >= 0:
+            y -= 1
+            i = next((i for i in reversed(range(0, w)) if not board[y][i].is_swept), w)
+        else:
+            i = 0
+    return (i, y)
+
+
 def is_win(board: List[List[Cell]]) -> bool:
     n = {EASY[1]: EASY, MEDIUM[1]: MEDIUM, HARD[1]: HARD}[len(board)][2]
     return [cell.is_swept for cell in chain(*board)].count(False) == n

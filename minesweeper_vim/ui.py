@@ -183,16 +183,18 @@ class GameApp:
 def c_main(stdscr: "curses._CursesWindow") -> int:
     app = GameApp(stdscr, game.create_game(*game.EASY))
     mv = {
-        "h": lambda y, x: (y, x - 3) if x > 1 else (y, x),
-        "j": lambda y, x: (y + 1, x) if y < app.game.height else (y, x),
-        "k": lambda y, x: (y - 1, x) if y > 1 else (y, x),
-        "l": lambda y, x: (y, x + 3) if x < (app.game.width - 1) * 3 else (y, x),
-        "\n": lambda y, x: (y + 1, 1) if y < app.game.height else (y, x),
-        "0": lambda y, _: (y, 1),
-        "$": lambda y, _: (y, app.game.width * 3 - 2),
-        "H": lambda _, __: (1, 1),
-        "L": lambda _, __: (app.game.height, 1),
-        "M": lambda _, __: (int(app.game.height / 2), 1),
+        "b": lambda x, y: game.prev_unswept(app.game.board, x, y),
+        "h": lambda x, y: (x - 1, y) if x > 0 else (x, y),
+        "j": lambda x, y: (x, y + 1) if y + 1 < app.game.height else (x, y),
+        "k": lambda x, y: (x, y - 1) if y - 1 >= 0 else (x, y),
+        "l": lambda x, y: (x + 1, y) if x < app.game.width - 1 else (x, y),
+        "w": lambda x, y: game.next_unswept(app.game.board, x, y),
+        "\n": lambda x, y: (0, y + 1) if y < app.game.height else (x, y),
+        "0": lambda _, y: (0, y),
+        "$": lambda _, y: (app.game.width - 1, y),
+        "H": lambda _, __: (0, 0),
+        "L": lambda _, __: (0, app.game.height - 1),
+        "M": lambda _, __: (0, int((app.game.height - 1) / 2)),
     }
     for tok in lex(stdscr):
         if tok == ":q\n":
@@ -206,11 +208,8 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
                 return bye(app, "You win!")
         elif tok == "m":
             app.mark_cell()
-        elif tok == "w":
-            x, y = game.next_unswept(app.game.board, *app.cursor.to_model())
-            app.move_to(Cursor.from_model(x, y))
         else:
-            app.move_to(Cursor(*mv[tok](app.cursor.y, app.cursor.x)))
+            app.move_to(Cursor.from_model(*mv[tok](*app.cursor.to_model())))
     return 0
 
 
