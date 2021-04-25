@@ -18,6 +18,7 @@ pytest-cov = "^2.11.1"
 pytest-pythonpath = "^0.7.3"
 hecate = "^0.1.0"
 pytest-mock = "^3.5.1"
+flake8 = "^3.9.1"
 
 [tool.pytest.ini_options]
 # addopts = "--cov minesweeper --cov tests --cov-branch --cov-report term-missing"
