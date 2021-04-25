@@ -137,6 +137,16 @@ class GameApp:
         if self.active_cell.is_swept and self.active_cell.value == " ":
             self._reveal_unmarked_neighbors()
 
+    def reveal_mines(self):
+        h, w = (self.game.height, self.game.width)
+        for y, x in ((y, x) for y in range(h) for x in range(w)):
+            cell = game.cell_at(self.game.board, x, y)
+            if cell.is_flag and cell.value != "*":
+                cursor = Cursor.from_model(x, y)
+                overwrite_str(self.stdscr, cursor.x - 1, cursor.y, " / ")
+            elif cell.value == "*":
+                self._reveal_cell(Cursor.from_model(x, y))
+
     def _reveal_unmarked_neighbors(self):
         x, y = self.cursor.to_model()
         swath = game.get_unmarked_neighbor_cells(self.game.board, x, y)
@@ -189,7 +199,8 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
             return 0
         if tok == "x":
             app.sweep_cell()
-            if app.active_cell.is_swept and app.active_cell.value == "*":
+            if game.is_loss(app.game.board):
+                app.reveal_mines()
                 return bye(app, "Game Over")
             if game.is_win(app.game.board):
                 return bye(app, "You win!")

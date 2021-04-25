@@ -37,6 +37,16 @@ def test_reveal_unmarked(runner):
     ]
 
 
+def test_reveal_bad_mark_loses(runner):
+    runner.await_text("[ ]" * 10)
+    runner.write("mjxx")
+    runner.await_text("Game Over")
+    assert runner.screenshot().split("\n")[1:3] == [
+        " /  * [ ] * [ ][ ][ ][ ][ ] *",
+        " 1  1 [ ][ ][ ][ ][ ][ ][ ][ ]",
+    ]
+
+
 def test_win(runner):
     runner.await_text("[ ]" * 10)
     assert runner.screenshot().split("\n")[0].endswith("000")
