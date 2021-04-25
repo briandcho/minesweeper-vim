@@ -2,11 +2,17 @@ import curses
 from collections import namedtuple
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Callable, Generator, Tuple
+from typing import Callable, Dict, Generator, Tuple
 
 import typer
 
 from minesweeper_vim import game
+
+DOWN = 258
+UP = 259
+LEFT = 260
+RIGHT = 261
+KEYMAP: Dict[int, str] = {DOWN: "j", UP: "k", LEFT: "h", RIGHT: "l", ord(" "): "l"}
 
 
 @dataclass
@@ -37,11 +43,13 @@ def lex(stdscr) -> Generator:
     accept_states = [0]
     machine = [
         [
-            StateRule(0, lambda c: c in "$0HLMbhjklmwx\n"),
+            StateRule(
+                0, lambda c: c in [DOWN, UP, LEFT, RIGHT] or c in "$0HLMbhjklmwx \n"
+            ),
             StateRule(1, lambda c: c in "123456789"),
             StateRule(2, lambda c: c == ":"),
         ],
-        [StateRule(0, lambda c: c in "$0HLMbhjklwx\n")],
+        [StateRule(0, lambda c: c in "$0HLMbhjklwx \n")],
         [StateRule(3, lambda c: c == "q")],
         [StateRule(0, lambda c: c == "\n")],
     ]
@@ -59,35 +67,13 @@ def lex(stdscr) -> Generator:
             raise AssertionError(repr(c))
         if not start_time:
             start_time = datetime.now()
-        tok += c
+        tok += KEYMAP.get(c if isinstance(c, int) else ord(c), c)
         if rule.next_state in [2, 3]:
             stdscr.echochar(c)
         elif rule.next_state in accept_states:
             yield tok
             tok = ""
         state = rule.next_state
-
-
-"""
-register clock listener
-register key press listeners
-event loop:
-  input next char (don't block)
-  invoke listeners
-
-"h" listener -> move cursor left once within left bound
-"""
-
-
-def event_loop(stdscr: "curses._CursesWindow", callback: Callable):
-    stdscr.nodelay(True)
-    while True:
-        try:
-            c = stdscr.get_wch()
-        except curses.error:
-            pass
-        except StopIteration:
-            raise AssertionError(repr(c))
 
 
 Yx = namedtuple("Yx", ["y", "x"])
@@ -117,6 +103,8 @@ class GameApp:
     def __post_init__(self):
         ui_board = (CELL_STR * self.game.width + "\n") * self.game.height
         self.stdscr.addstr(0, 0, f"MiNeSwEePeR{' '*16}000\n{ui_board}")
+        ed = ":easy medium hard"
+        self.stdscr.nodelay(True)
         self._redraw_cursor()
 
     def move_to(self, cursor: Cursor):
@@ -143,7 +131,7 @@ class GameApp:
             cell = game.cell_at(self.game.board, x, y)
             if cell.is_flag and cell.value != "*":
                 cursor = Cursor.from_model(x, y)
-                overwrite_str(self.stdscr, cursor.x - 1, cursor.y, " / ")
+                overwrite_str(self.stdscr, cursor.x - 1, cursor.y, "[/]")
             elif cell.value == "*":
                 self._reveal_cell(Cursor.from_model(x, y))
 
@@ -228,7 +216,8 @@ def overwrite_str(stdscr: "curses._CursesWindow", x: int, y: int, s: str):
     stdscr.move(*cursor)
 
 
-def debug(stdscr, cursor, msg):
+def debug(stdscr: "curses._CursesWindow", msg: str):
+    cursor = stdscr.getyx()
     stdscr.addstr(0, 13, msg)
     stdscr.clrtoeol()
     stdscr.move(*cursor)

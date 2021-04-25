@@ -42,7 +42,7 @@ def test_reveal_bad_mark_loses(runner):
     runner.write("mjxx")
     runner.await_text("Game Over")
     assert runner.screenshot().split("\n")[1:3] == [
-        " /  * [ ] * [ ][ ][ ][ ][ ] *",
+        "[/] * [ ] * [ ][ ][ ][ ][ ] *",
         " 1  1 [ ][ ][ ][ ][ ][ ][ ][ ]",
     ]
 

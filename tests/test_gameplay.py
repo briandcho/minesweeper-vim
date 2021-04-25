@@ -32,14 +32,30 @@ def test_next_unswept_skip_1():
     assert game.next_unswept(board, 0, 0) == (1, 0)
 
 
+def test_prev_unswept_skip_1():
+    board = game._to_cells([["1", " "]])
+    board[0][1].is_swept = True
+    assert game.prev_unswept(board, 1, 0) == (0, 0)
+
+
 def test_next_unswept_next_row():
-    board = game._to_cells([["1", " "], [" ", " "]])
+    board = game._to_cells([[" ", " "], [" ", " "]])
     assert game.next_unswept(board, 0, 0) == (0, 1)
+
+
+def test_prev_unswept_prev_row():
+    board = game._to_cells([[" ", " "], [" ", " "]])
+    assert game.prev_unswept(board, 1, 1) == (1, 0)
 
 
 def test_next_unswept_end_of_row():
     board = game._to_cells([[" ", " ", " "]])
     assert game.next_unswept(board, 0, 0) == (2, 0)
+
+
+def test_prev_unswept_beginning_of_row():
+    board = game._to_cells([[" ", " ", " "]])
+    assert game.prev_unswept(board, 2, 0) == (0, 0)
 
 
 def test_next_unswept_skip_unswept():
@@ -48,10 +64,22 @@ def test_next_unswept_skip_unswept():
     assert game.next_unswept(board, 0, 0) == (2, 0)
 
 
+def test_prev_unswept_skip_unswept():
+    board = game._to_cells([[" ", " ", "1", " "]])
+    board[0][2].is_swept = True
+    assert game.prev_unswept(board, 3, 0) == (1, 0)
+
+
 def test_next_unswept_next_row_skip_1():
     board = game._to_cells([[" ", " "], ["1", " "]])
     board[1][0].is_swept = True
     assert game.next_unswept(board, 0, 0) == (1, 1)
+
+
+def test_prev_unswept_prev_row_skip_1():
+    board = game._to_cells([[" ", "1"], [" ", " "]])
+    board[0][1].is_swept = True
+    assert game.prev_unswept(board, 1, 1) == (0, 0)
 
 
 @pytest.mark.parametrize(
