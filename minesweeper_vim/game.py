@@ -29,7 +29,9 @@ class Game:
 def create_game(width: int, height: int, n_mines: int) -> Game:
     cells = list("*" * n_mines + " " * (width * height - n_mines))
     random.shuffle(cells)
-    board = [cells[row * width : row * width + width] for row in range(height)]
+    board = [
+        cells[row * width : row * width + width] for row in range(height)  # noqa E203
+    ]
     return Game(width, height, n_mines, _to_cells(number_board(board)))
 
 
@@ -71,6 +73,15 @@ def bump_neighbor_cells(board: List, x: int, y: int):
         if board[_y][_x] != "*":
             v = 1 if board[_y][_x] == " " else int(board[_y][_x]) + 1
             board[_y][_x] = str(v)
+
+
+def get_unmarked_neighbor_cells(board: List, x: int, y: int) -> List[Tuple[int, int]]:
+    unswept_cells = get_unswept_neighbor_cells(board, x, y)
+    n_flags = [board[y][x].is_flag for (x, y) in unswept_cells].count(True)
+    cell = board[y][x]
+    if n_flags == int(0 if cell.value == " " else cell.value):
+        return [(x, y) for x, y in unswept_cells if not cell.is_flag]
+    return []
 
 
 def get_unswept_neighbor_cells(board: List, x: int, y: int) -> List[Tuple[int, int]]:

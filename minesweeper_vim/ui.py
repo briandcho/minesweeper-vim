@@ -2,7 +2,7 @@ import curses
 from collections import namedtuple
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Callable, Generator, List, Tuple
+from typing import Callable, Generator, Tuple
 
 import typer
 
@@ -17,7 +17,7 @@ class StateRule:
 
 def lex(stdscr) -> Generator:
     """
-    /[$0HLM]|[1-9]?[bhjklmwx\n]|:\S+/
+    /[$0HLM]|[1-9]?[bhjklmwx\n]|:\\S+/
     ```mermaid
     graph LR
     subgraph lex
@@ -112,44 +112,62 @@ class GameApp:
 
     @property
     def active_cell(self):
-        return self.cell_at(self.cursor)
+        return self._cell_at(self.cursor)
 
     def __post_init__(self):
         ui_board = (CELL_STR * self.game.width + "\n") * self.game.height
         self.stdscr.addstr(0, 0, f"MiNeSwEePeR{' '*16}000\n{ui_board}")
-        self.redraw_cursor()
-
-    def cell_at(self, cursor: Cursor) -> game.Cell:
-        x, y = cursor.to_model()
-        return self.game.board[y][x]
-
-    def redraw_cell(self, cursor: Cursor = None):
-        cursor = cursor or self.cursor
-        cell = self.cell_at(cursor)
-        v = FLAG_CELL_STR if cell.is_flag else CELL_STR
-        if cell.is_swept:
-            v = f" {cell.value} "
-        overwrite_str(self.stdscr, cursor.x - 1, cursor.y, v)
-
-    def redraw_cursor(self):
-        self.stdscr.move(*self.cursor)
+        self._redraw_cursor()
 
     def move_to(self, cursor: Cursor):
         self.cursor = cursor
-        self.redraw_cursor()
+        self._redraw_cursor()
 
     def mark_cell(self):
         if self.active_cell.is_swept:
             return
         self.active_cell.is_flag = not self.active_cell.is_flag
-        self.redraw_cell()
+        self._redraw_cell()
 
-    def reveal_cell(self, cursor: Cursor = None):
+    def sweep_cell(self):
+        if self.active_cell.is_swept and self.active_cell.value in "12345678":
+            self._reveal_unmarked_neighbors()
+        else:
+            self._reveal_cell()
+        if self.active_cell.is_swept and self.active_cell.value == " ":
+            self._reveal_unmarked_neighbors()
+
+    def _reveal_unmarked_neighbors(self):
+        x, y = self.cursor.to_model()
+        swath = game.get_unmarked_neighbor_cells(self.game.board, x, y)
+        for x, y in swath:
+            self._reveal_cell(Cursor.from_model(x, y))
+            if self._cell_at(Cursor.from_model(x, y)).value == " ":
+                more_cells = set(game.get_unswept_neighbor_cells(self.game.board, x, y))
+                more_cells = more_cells.difference(set(swath))
+                swath.extend(more_cells)
+
+    def _reveal_cell(self, cursor: Cursor = None):
         cursor = cursor or self.cursor
-        cell = self.cell_at(cursor)
+        cell = self._cell_at(cursor)
         if not cell.is_flag:
             cell.is_swept = True
-        self.redraw_cell(cursor)
+        self._redraw_cell(cursor)
+
+    def _cell_at(self, cursor: Cursor) -> game.Cell:
+        x, y = cursor.to_model()
+        return self.game.board[y][x]
+
+    def _redraw_cell(self, cursor: Cursor = None):
+        cursor = cursor or self.cursor
+        cell = self._cell_at(cursor)
+        v = FLAG_CELL_STR if cell.is_flag else CELL_STR
+        if cell.is_swept:
+            v = f" {cell.value} "
+        overwrite_str(self.stdscr, cursor.x - 1, cursor.y, v)
+
+    def _redraw_cursor(self):
+        self.stdscr.move(*self.cursor)
 
 
 def c_main(stdscr: "curses._CursesWindow") -> int:
@@ -170,14 +188,9 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
         if tok == ":q\n":
             return 0
         if tok == "x":
-            if app.active_cell.is_swept and app.active_cell.value in "12345678":
-                reveal_unmarked_neighbors(app)
-            else:
-                app.reveal_cell()
+            app.sweep_cell()
             if app.active_cell.is_swept and app.active_cell.value == "*":
                 return bye(app, "Game Over")
-            if app.active_cell.value == " ":
-                reveal_spaces(app)
             if game.is_win(app.game.board):
                 return bye(app, "You win!")
         elif tok == "m":
@@ -188,34 +201,6 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
         else:
             app.move_to(Cursor(*mv[tok](app.cursor.y, app.cursor.x)))
     return 0
-
-
-def reveal_unmarked_neighbors(app: GameApp):
-    x, y = app.cursor.to_model()
-    unswept_cells = game.get_unswept_neighbor_cells(app.game.board, x, y)
-    n_flags = [app.game.board[y][x].is_flag for (x, y) in unswept_cells].count(True)
-    if n_flags != int(app.active_cell.value):
-        return
-    unmarked_cells = [
-        (x, y) for x, y in unswept_cells if not app.game.board[y][x].is_flag
-    ]
-    for x, y in unmarked_cells:
-        app.reveal_cell(Cursor.from_model(x, y))
-        if app.game.board[y][x].value == " ":
-            more_cells = set(game.get_unswept_neighbor_cells(app.game.board, x, y))
-            more_cells = more_cells.difference(set(unmarked_cells))
-            unmarked_cells.extend(more_cells)
-
-
-def reveal_spaces(app: GameApp):
-    x, y = app.cursor.to_model()
-    unswept_cells = game.get_unswept_neighbor_cells(app.game.board, x, y)
-    for x, y in unswept_cells:
-        app.reveal_cell(Cursor.from_model(x, y))
-        if app.cell_at(Cursor.from_model(x, y)).value == " ":
-            more_cells = set(game.get_unswept_neighbor_cells(app.game.board, x, y))
-            more_cells = more_cells.difference(set(unswept_cells))
-            unswept_cells.extend(more_cells)
 
 
 def bye(app: GameApp, msg: str):
