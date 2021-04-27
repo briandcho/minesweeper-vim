@@ -2,83 +2,25 @@ import curses
 from collections import namedtuple
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Callable, Dict, Generator, Tuple
+from typing import Callable, Dict, Generator, List, Tuple
+from curses import KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_UP
 
 import typer
 
 from minesweeper_vim import game
 
-DOWN = 258
-UP = 259
-LEFT = 260
-RIGHT = 261
-KEYMAP: Dict[int, str] = {DOWN: "j", UP: "k", LEFT: "h", RIGHT: "l", ord(" "): "l"}
-
-
-@dataclass
-class StateRule:
-    next_state: int
-    cond: Callable
-
-
-def lex(stdscr) -> Generator:
-    """
-    /[$0HLM]|[1-9]?[bhjklmwx\n]|:\\S+/
-    ```mermaid
-    graph LR
-    subgraph lex
-        0((0))--"[$0HLMbhjklmwx\n]"-->0
-        0--"[1-9]"-->1((1))
-        0--:-->2((2))
-        1--"[$0HLMbhjklmwx\n]"-->0
-        2--"q"-->3
-        3--"\n"-->0
-    end
-    classDef accept stroke:#333,stroke-width:4px;
-    class 0 accept
-    ```
-    """
-    state = 0
-    tok = ""
-    accept_states = [0]
-    machine = [
-        [
-            StateRule(
-                0, lambda c: c in [DOWN, UP, LEFT, RIGHT] or c in "$0HLMbhjklmwx \n"
-            ),
-            StateRule(1, lambda c: c in "123456789"),
-            StateRule(2, lambda c: c == ":"),
-        ],
-        [StateRule(0, lambda c: c in "$0HLMbhjklwx \n")],
-        [StateRule(3, lambda c: c == "q")],
-        [StateRule(0, lambda c: c == "\n")],
-    ]
-    start_time = None
-    while True:
-        try:
-            if start_time:
-                elapsed_time = datetime.now() - start_time
-                overwrite_str(stdscr, 27, 0, f"{elapsed_time.seconds:03}")
-            c = stdscr.get_wch()
-            rule = next(rule for rule in machine[state] if rule.cond(c))
-        except curses.error:
-            continue
-        except StopIteration:
-            raise AssertionError(repr(c))
-        if not start_time:
-            start_time = datetime.now()
-        tok += KEYMAP.get(c if isinstance(c, int) else ord(c), c)
-        if rule.next_state in [2, 3]:
-            stdscr.echochar(c)
-        elif rule.next_state in accept_states:
-            yield tok
-            tok = ""
-        state = rule.next_state
-
-
-Yx = namedtuple("Yx", ["y", "x"])
+DELETE = 0x7F
+KEYMAP: Dict[int, str] = {
+    ord(" "): "l",
+    DELETE: "h",
+    KEY_DOWN: "j",
+    KEY_UP: "k",
+    KEY_LEFT: "h",
+    KEY_RIGHT: "l",
+}
 CELL_STR = "[ ]"
 FLAG_CELL_STR = "[x]"
+Yx = namedtuple("Yx", ["y", "x"])
 
 
 class Cursor(Yx):
@@ -102,8 +44,7 @@ class GameApp:
 
     def __post_init__(self):
         ui_board = (CELL_STR * self.game.width + "\n") * self.game.height
-        self.stdscr.addstr(0, 0, f"MiNeSwEePeR{' '*16}000\n{ui_board}")
-        ed = ":easy medium hard"
+        self.stdscr.addstr(0, 0, f"MiNeSwEePeR{' '*15}000s\n{ui_board}")
         self.stdscr.nodelay(True)
         self._redraw_cursor()
 
@@ -177,28 +118,84 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
         "k": lambda x, y: (x, y - 1) if y - 1 >= 0 else (x, y),
         "l": lambda x, y: (x + 1, y) if x < app.game.width - 1 else (x, y),
         "w": lambda x, y: game.next_unswept(app.game.board, x, y),
-        "\n": lambda x, y: (0, y + 1) if y < app.game.height else (x, y),
+        "\n": lambda x, y: (0, y + 1) if y + 1 < app.game.height else (x, y),
         "0": lambda _, y: (0, y),
         "$": lambda _, y: (app.game.width - 1, y),
         "H": lambda _, __: (0, 0),
         "L": lambda _, __: (0, app.game.height - 1),
         "M": lambda _, __: (0, int((app.game.height - 1) / 2)),
     }
-    for tok in lex(stdscr):
-        if tok == ":q\n":
-            return 0
-        if tok == "x":
+    for c in async_input(stdscr):
+        if c == ":":
+            choice = ed_choose(app)
+            if choice == "quit":
+                return 0
+            else:
+                sz = {"small": game.EASY, "medium": game.MEDIUM, "large": game.HARD}
+                app = GameApp(stdscr, game.create_game(*sz[choice]))
+        elif c == "x":
             app.sweep_cell()
             if game.is_loss(app.game.board):
                 app.reveal_mines()
                 return bye(app, "Game Over")
             if game.is_win(app.game.board):
                 return bye(app, "You win!")
-        elif tok == "m":
+        elif c == "m":
             app.mark_cell()
+        elif c in mv:
+            app.move_to(Cursor.from_model(*mv[c](*app.cursor.to_model())))
         else:
-            app.move_to(Cursor.from_model(*mv[tok](*app.cursor.to_model())))
+            debug(app, f"{c} not implemented")
     return 0
+
+
+def async_input(stdscr: "curses._CursesWindow") -> Generator:
+    start_time = None
+    while True:
+        try:
+            if start_time:
+                elapsed_time = datetime.now() - start_time
+                overwrite_str(stdscr, 26, 0, f"{elapsed_time.seconds:03}")
+            c = stdscr.get_wch()
+            yield KEYMAP.get(c if isinstance(c, int) else ord(c), c)
+        except curses.error:
+            continue
+        if not start_time:
+            start_time = datetime.now()
+
+
+def ed_choose(app: GameApp):
+    choices = ["small", "medium", "large", "quit", "?"]
+    shortcut = dict(zip("smlq?", choices))
+    y = app.game.height + 1
+    cursor = app.cursor
+    app.stdscr.addstr(y, 0, ":")
+    for s in choices:
+        ed_add_selection(app, s)
+    choice = 0
+    app.move_to(ed_choice_cursor(y, choices, choice))
+    for c in async_input(app.stdscr):
+        if c == "\n":
+            app.move_to(cursor)
+            return choices[choice]
+        if c in "lw":
+            choice = choice + (1 if choice + 1 < len(choices) else 0)
+        elif c in "bh":
+            choice = choice - (1 if choice - 1 >= 0 else 0)
+        elif c in "smlq?":
+            choice = choices.index(shortcut[c])
+        app.move_to(ed_choice_cursor(y, choices, choice))
+
+
+def ed_choice_cursor(y: int, choices: List[str], choice: int) -> Cursor:
+    return Cursor(y, sum(len(s) for s in choices[:choice]) + 2 * (choice + 1))
+
+
+def ed_add_selection(app: GameApp, text: str):
+    app.stdscr.addstr("[")
+    app.stdscr.addstr(text[0], curses.A_REVERSE)
+    app.stdscr.addstr(text[1:])
+    app.stdscr.addstr("]")
 
 
 def bye(app: GameApp, msg: str):
@@ -216,11 +213,10 @@ def overwrite_str(stdscr: "curses._CursesWindow", x: int, y: int, s: str):
     stdscr.move(*cursor)
 
 
-def debug(stdscr: "curses._CursesWindow", msg: str):
-    cursor = stdscr.getyx()
-    stdscr.addstr(0, 13, msg)
-    stdscr.clrtoeol()
-    stdscr.move(*cursor)
+def debug(app: GameApp, msg: str):
+    cursor = app.stdscr.getyx()
+    app.stdscr.addstr(app.game.height + 1, 0, msg)
+    app.stdscr.move(*cursor)
 
 
 def main(seed: int = typer.Option(0, help="seed for repeatable game")) -> int:

@@ -8,7 +8,7 @@ from hecate.hecate import Runner
 def test_minesweeper_quit(runner):
     runner.await_text("MiNeSwEePeR")
     runner.write(":q")
-    runner.await_text(":q")
+    runner.await_text("quit")
     runner.press("Enter")
     runner.await_exit()
 
@@ -49,12 +49,18 @@ def test_reveal_bad_mark_loses(runner):
 
 def test_win(runner):
     runner.await_text("[ ]" * 10)
-    assert runner.screenshot().split("\n")[0].endswith("000")
+    assert runner.screenshot().split("\n")[0].endswith("000s")
     runner.write("x")
     sleep(1)
     runner.write("xjxjxllxkkxlllxM$xbxwxjxjxjxhxkxhjx")
     runner.await_text("You win!")
-    assert not runner.screenshot().split("\n")[0].endswith("000")
+    assert not runner.screenshot().split("\n")[0].endswith("000s")
+
+
+def test_ed_mode_set_difficulty_when_game_not_started(runner):
+    runner.await_text("[ ]" * 10)
+    runner.write(":")
+    runner.await_text(":[small][medium][large][quit][?]")
 
 
 @pytest.fixture
