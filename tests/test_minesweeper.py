@@ -15,12 +15,14 @@ def test_minesweeper_quit(runner):
 
 def test_minesweeper_movement_and_flag_cell_invincible(runner):
     runner.await_text("[ ]" * 10)
+    runner.press("Enter")
     runner.write("L$hmxlmm")
     assert runner.screenshot().strip().endswith("[x][ ]")
 
 
 def test_reveal_spaces(runner):
-    runner.await_text("[ ]" * 10)
+    runner.await_text(":[easy]")
+    runner.press("Enter")
     runner.write("lllllx")
     assert runner.screenshot().split("\n")[1:3] == [
         "[ ][ ][ ][ ] 1           1 [ ]",
@@ -30,6 +32,7 @@ def test_reveal_spaces(runner):
 
 def test_reveal_unmarked(runner):
     runner.await_text("[ ]" * 10)
+    runner.press("Enter")
     runner.write("xlmhx")
     assert runner.screenshot().split("\n")[1:3] == [
         " 1 [x][ ][ ][ ][ ][ ][ ][ ][ ]",
@@ -39,6 +42,7 @@ def test_reveal_unmarked(runner):
 
 def test_reveal_bad_mark_loses(runner):
     runner.await_text("[ ]" * 10)
+    runner.press("Enter")
     runner.write("mjxx")
     runner.await_text("Game Over")
     assert runner.screenshot().split("\n")[1:3] == [
@@ -49,18 +53,18 @@ def test_reveal_bad_mark_loses(runner):
 
 def test_win(runner):
     runner.await_text("[ ]" * 10)
+    runner.press("Enter")
     assert runner.screenshot().split("\n")[0].endswith("000s")
     runner.write("x")
     sleep(1)
-    runner.write("xjxjxllxkkxlllxM$xbxwxjxjxjxhxkxhjx")
+    runner.write("jxjxllxkkxlllxM$xbxwxjxjxjxhxkxhjx")
     runner.await_text("You win!")
     assert not runner.screenshot().split("\n")[0].endswith("000s")
 
 
 def test_ed_mode_set_difficulty_when_game_not_started(runner):
     runner.await_text("[ ]" * 10)
-    runner.write(":")
-    runner.await_text(":[small][medium][large][quit][?]")
+    runner.await_text(":[easy][medium][hard][quit][?]")
 
 
 @pytest.fixture

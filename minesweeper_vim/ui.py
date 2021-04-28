@@ -44,6 +44,7 @@ class GameApp:
 
     def __post_init__(self):
         ui_board = (CELL_STR * self.game.width + "\n") * self.game.height
+        self.stdscr.clrtobot()
         self.stdscr.addstr(0, 0, f"MiNeSwEePeR{' '*15}000s\n{ui_board}")
         self.stdscr.nodelay(True)
         self._redraw_cursor()
@@ -110,6 +111,7 @@ class GameApp:
 
 
 def c_main(stdscr: "curses._CursesWindow") -> int:
+    dims = {"easy": game.EASY, "medium": game.MEDIUM, "hard": game.HARD}
     app = GameApp(stdscr, game.create_game(*game.EASY))
     mv = {
         "b": lambda x, y: game.prev_unswept(app.game.board, x, y),
@@ -125,21 +127,23 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
         "L": lambda _, __: (0, app.game.height - 1),
         "M": lambda _, __: (0, int((app.game.height - 1) / 2)),
     }
+    difficulty = ed_choose(app)
+    if difficulty != "easy":
+        app = GameApp(stdscr, game.create_game(*dims[difficulty]))
+    else:
+        overwrite_str(app.stdscr, 0, app.game.height + 1, " " * 30)
     for c in async_input(stdscr):
         if c == ":":
-            choice = ed_choose(app)
-            if choice == "quit":
-                return 0
-            else:
-                sz = {"small": game.EASY, "medium": game.MEDIUM, "large": game.HARD}
-                app = GameApp(stdscr, game.create_game(*sz[choice]))
+            app = GameApp(stdscr, game.create_game(*dims[ed_choose(app)]))
         elif c == "x":
             app.sweep_cell()
             if game.is_loss(app.game.board):
                 app.reveal_mines()
-                return bye(app, "Game Over")
-            if game.is_win(app.game.board):
-                return bye(app, "You win!")
+                bye(app, "Game Over  ")
+                app = GameApp(stdscr, game.create_game(*dims[ed_choose(app)]))
+            elif game.is_win(app.game.board):
+                bye(app, "You win!   ")
+                app = GameApp(stdscr, game.create_game(*dims[ed_choose(app)]))
         elif c == "m":
             app.mark_cell()
         elif c in mv:
@@ -165,44 +169,42 @@ def async_input(stdscr: "curses._CursesWindow") -> Generator:
 
 
 def ed_choose(app: GameApp):
-    choices = ["small", "medium", "large", "quit", "?"]
-    shortcut = dict(zip("smlq?", choices))
+    choices = ["_e_asy", "_m_edium", "h_a_rd", "_q_uit", "_?_"]
+    shortcuts = list("emaq?")
+    positions = [2, 8, 17, 22, 28]
     y = app.game.height + 1
     cursor = app.cursor
     app.stdscr.addstr(y, 0, ":")
     for s in choices:
         ed_add_selection(app, s)
     choice = 0
-    app.move_to(ed_choice_cursor(y, choices, choice))
+    app.move_to(Cursor(y, positions[choice]))
     for c in async_input(app.stdscr):
         if c == "\n":
             app.move_to(cursor)
-            return choices[choice]
+            return choices[choice].replace("_", "")
         if c in "lw":
             choice = choice + (1 if choice + 1 < len(choices) else 0)
         elif c in "bh":
             choice = choice - (1 if choice - 1 >= 0 else 0)
-        elif c in "smlq?":
-            choice = choices.index(shortcut[c])
-        app.move_to(ed_choice_cursor(y, choices, choice))
-
-
-def ed_choice_cursor(y: int, choices: List[str], choice: int) -> Cursor:
-    return Cursor(y, sum(len(s) for s in choices[:choice]) + 2 * (choice + 1))
+        elif c in shortcuts:
+            choice = shortcuts.index(c)
+        app.move_to(Cursor(y, positions[choice]))
 
 
 def ed_add_selection(app: GameApp, text: str):
     app.stdscr.addstr("[")
-    app.stdscr.addstr(text[0], curses.A_REVERSE)
-    app.stdscr.addstr(text[1:])
+    attr = 0
+    for c in text:
+        if c == "_":
+            attr = 0 if attr else curses.A_UNDERLINE
+        else:
+            app.stdscr.addstr(c, attr)
     app.stdscr.addstr("]")
 
 
 def bye(app: GameApp, msg: str):
-    app.stdscr.addstr(app.game.height + 1, 0, msg)
-    app.stdscr.nodelay(False)
-    app.stdscr.get_wch()
-    return 0
+    overwrite_str(app.stdscr, 0, 0, msg)
 
 
 def overwrite_str(stdscr: "curses._CursesWindow", x: int, y: int, s: str):
@@ -222,7 +224,11 @@ def debug(app: GameApp, msg: str):
 def main(seed: int = typer.Option(0, help="seed for repeatable game")) -> int:
     if seed:
         game.random.seed(seed)
-    return curses.wrapper(c_main)
+    try:
+        return curses.wrapper(c_main)
+    except KeyError:
+        print("Thanks for playing")
+        return 0
 
 
 def run():
