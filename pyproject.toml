@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "minesweeper-vim"
-version = "0.1.0"
+version = "0.1.1"
 description = "Curses minesweeper with vim bindings"
 authors = ["Brian Cho <briandcho@yahoo.com>"]
 license = "MIT"
