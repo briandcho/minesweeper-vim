@@ -5,7 +5,7 @@ import pytest
 from hecate.hecate import Runner
 
 
-def test_minesweeper_quit(runner):
+def test_minesweeper_quit(runner: Runner) -> None:
     runner.await_text("MiNeSwEePeR")
     runner.write(":q")
     runner.await_text("quit")
@@ -13,14 +13,14 @@ def test_minesweeper_quit(runner):
     runner.await_exit()
 
 
-def test_minesweeper_movement_and_flag_cell_invincible(runner):
+def test_minesweeper_movement_and_flag_cell_invincible(runner: Runner) -> None:
     runner.await_text("[ ]" * 10)
     runner.press("Enter")
     runner.write("L$hmxlmm")
     assert runner.screenshot().strip().endswith("[x][ ]")
 
 
-def test_reveal_spaces(runner):
+def test_reveal_spaces(runner: Runner) -> None:
     runner.await_text(":[easy]")
     runner.press("Enter")
     runner.write("lllllx")
@@ -30,7 +30,7 @@ def test_reveal_spaces(runner):
     ]
 
 
-def test_reveal_unmarked(runner):
+def test_reveal_unmarked(runner: Runner) -> None:
     runner.await_text("[ ]" * 10)
     runner.press("Enter")
     runner.write("xlmhx")
@@ -40,7 +40,7 @@ def test_reveal_unmarked(runner):
     ]
 
 
-def test_reveal_bad_mark_loses(runner):
+def test_reveal_bad_mark_loses(runner: Runner) -> None:
     runner.await_text("[ ]" * 10)
     runner.press("Enter")
     runner.write("mjxx")
@@ -51,7 +51,7 @@ def test_reveal_bad_mark_loses(runner):
     ]
 
 
-def test_win(runner):
+def test_win(runner: Runner) -> None:
     runner.await_text("[ ]" * 10)
     runner.press("Enter")
     assert runner.screenshot().split("\n")[0].endswith("000s")
@@ -62,13 +62,22 @@ def test_win(runner):
     assert not runner.screenshot().split("\n")[0].endswith("000s")
 
 
-def test_ed_mode_set_difficulty_when_game_not_started(runner):
+def test_ed_mode_set_difficulty_when_game_not_started(runner: Runner) -> None:
     runner.await_text("[ ]" * 10)
     runner.await_text(":[easy][medium][hard][quit][?]")
 
 
+def test_minesweeper_start_timer_when_difficulty_selected(runner: Runner) -> None:
+    runner.await_text("[medium]")
+    runner.write("l")
+    sleep(1)
+    assert runner.screenshot().split("\n")[0].endswith("000s")
+    runner.press("Enter")
+    assert len(runner.screenshot().split("\n")[1]) > 30
+
+
 @pytest.fixture
-def runner():
+def runner() -> Runner:
     """Seed 1
     1  *  2  *  1           1  *
     1  1  2  1  1  1  1  1  1  1

@@ -1,10 +1,10 @@
 import time
 import curses
 from collections import namedtuple
+from curses import KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_UP
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Callable, Dict, Generator, List, Tuple
-from curses import KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_UP
+from typing import Dict, Generator, Optional, Tuple
 
 import typer
 
@@ -40,27 +40,29 @@ class GameApp:
     cursor: Cursor = Cursor(1, 1)
 
     @property
-    def active_cell(self):
+    def active_cell(self) -> game.Cell:
         return self._cell_at(self.cursor)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         ui_board = (CELL_STR * self.game.width + "\n") * self.game.height
         self.stdscr.clrtobot()
-        self.stdscr.addstr(0, 0, f"MiNeSwEePeR{' '*15}000s\n{ui_board}")
+        self.stdscr.addstr(
+            0, 0, f"MiNeSwEePeR{' '*(self.game.width*3-15)}000s\n{ui_board}"
+        )
         self.stdscr.nodelay(True)
         self._redraw_cursor()
 
-    def move_to(self, cursor: Cursor):
+    def move_to(self, cursor: Cursor) -> None:
         self.cursor = cursor
         self._redraw_cursor()
 
-    def mark_cell(self):
+    def mark_cell(self) -> None:
         if self.active_cell.is_swept:
             return
         self.active_cell.is_flag = not self.active_cell.is_flag
         self._redraw_cell()
 
-    def sweep_cell(self):
+    def sweep_cell(self) -> None:
         if self.active_cell.is_swept and self.active_cell.value in "12345678":
             self._reveal_unmarked_neighbors()
         else:
@@ -68,7 +70,7 @@ class GameApp:
         if self.active_cell.is_swept and self.active_cell.value == " ":
             self._reveal_unmarked_neighbors()
 
-    def reveal_mines(self):
+    def reveal_mines(self) -> None:
         h, w = (self.game.height, self.game.width)
         for y, x in ((y, x) for y in range(h) for x in range(w)):
             cell = game.cell_at(self.game.board, x, y)
@@ -78,7 +80,7 @@ class GameApp:
             elif cell.value == "*":
                 self._reveal_cell(Cursor.from_model(x, y))
 
-    def _reveal_unmarked_neighbors(self):
+    def _reveal_unmarked_neighbors(self) -> None:
         x, y = self.cursor.to_model()
         swath = game.get_unmarked_neighbor_cells(self.game.board, x, y)
         for x, y in swath:
@@ -88,7 +90,7 @@ class GameApp:
                 more_cells = more_cells.difference(set(swath))
                 swath.extend(more_cells)
 
-    def _reveal_cell(self, cursor: Cursor = None):
+    def _reveal_cell(self, cursor: Optional[Cursor] = None) -> None:
         cursor = cursor or self.cursor
         cell = self._cell_at(cursor)
         if not cell.is_flag:
@@ -99,7 +101,7 @@ class GameApp:
         x, y = cursor.to_model()
         return self.game.board[y][x]
 
-    def _redraw_cell(self, cursor: Cursor = None):
+    def _redraw_cell(self, cursor: Optional[Cursor] = None) -> None:
         cursor = cursor or self.cursor
         cell = self._cell_at(cursor)
         v = FLAG_CELL_STR if cell.is_flag else CELL_STR
@@ -107,7 +109,7 @@ class GameApp:
             v = f" {cell.value} "
         overwrite_str(self.stdscr, cursor.x - 1, cursor.y, v)
 
-    def _redraw_cursor(self):
+    def _redraw_cursor(self) -> None:
         self.stdscr.move(*self.cursor)
 
 
@@ -154,7 +156,7 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
     return 0
 
 
-def async_input(stdscr: "curses._CursesWindow") -> Generator:
+def async_input(stdscr: "curses._CursesWindow") -> Generator[str, None, None]:
     start_time = None
     while True:
         try:
@@ -170,7 +172,7 @@ def async_input(stdscr: "curses._CursesWindow") -> Generator:
             start_time = datetime.now()
 
 
-def ed_choose(app: GameApp):
+def ed_choose(app: GameApp) -> Optional[str]:
     choices = ["_e_asy", "_m_edium", "h_a_rd", "_q_uit", "_?_"]
     shortcuts = list("emaq?")
     positions = [2, 8, 17, 22, 28]
@@ -192,9 +194,10 @@ def ed_choose(app: GameApp):
         elif c in shortcuts:
             choice = shortcuts.index(c)
         app.move_to(Cursor(y, positions[choice]))
+    return None
 
 
-def ed_add_selection(app: GameApp, text: str):
+def ed_add_selection(app: GameApp, text: str) -> None:
     app.stdscr.addstr("[")
     attr = 0
     for c in text:
@@ -205,11 +208,11 @@ def ed_add_selection(app: GameApp, text: str):
     app.stdscr.addstr("]")
 
 
-def bye(app: GameApp, msg: str):
+def bye(app: GameApp, msg: str) -> None:
     overwrite_str(app.stdscr, 0, 0, msg)
 
 
-def overwrite_str(stdscr: "curses._CursesWindow", x: int, y: int, s: str):
+def overwrite_str(stdscr: "curses._CursesWindow", x: int, y: int, s: str) -> None:
     cursor = stdscr.getyx()
     for _ in range(len(s)):
         stdscr.delch(y, x)
@@ -217,7 +220,7 @@ def overwrite_str(stdscr: "curses._CursesWindow", x: int, y: int, s: str):
     stdscr.move(*cursor)
 
 
-def debug(app: GameApp, msg: str):
+def debug(app: GameApp, msg: str) -> None:
     cursor = app.stdscr.getyx()
     app.stdscr.addstr(app.game.height + 1, 0, msg)
     app.stdscr.move(*cursor)
@@ -233,7 +236,7 @@ def main(seed: int = typer.Option(0, help="seed for repeatable game")) -> int:
         return 0
 
 
-def run():
+def run() -> None:
     exit(typer.run(main))
 
 

@@ -1,10 +1,8 @@
 import pytest
 from minesweeper_vim import game
 
-"""game"""
 
-
-def test_initial_board_shuffles_mines(mocker):
+def test_initial_board_shuffles_mines():
     game_ = game.create_game(*game.EASY)
     assert game_.board == game_.board
     assert game.create_game(*game.EASY).board != game.create_game(*game.EASY).board
