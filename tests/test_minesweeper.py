@@ -67,6 +67,7 @@ def test_ed_mode_set_difficulty_when_game_not_started(runner: Runner) -> None:
     runner.await_text(":[easy][medium][hard][quit][?]")
 
 
+@pytest.mark.skip
 def test_minesweeper_start_timer_when_difficulty_selected(runner: Runner) -> None:
     runner.await_text("[medium]")
     runner.write("l")

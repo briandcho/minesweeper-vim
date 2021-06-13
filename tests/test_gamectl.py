@@ -18,8 +18,8 @@ def test_ioloop_scheduler_in_milliseconds(mocker: MockerFixture) -> None:
     ctl = gamectl.GameCtl()
     mock_callback = mocker.MagicMock(side_effect=[None] * 10)
     mock_sleep = mocker.patch("minesweeper_vim.gamectl.sleep", wraps=gamectl.sleep)
-    ctl.register_callback(mock_callback, interval=10)
+    ctl.register_callback(mock_callback, interval=100)
     with pytest.raises(StopIteration):
         ctl.ioloop()
-    mock_sleep.assert_called_with(.001)
-    assert 80 < mock_sleep.call_count <= 100
+    mock_sleep.assert_called_with(.1)
+    assert 8 < mock_sleep.call_count <= 12

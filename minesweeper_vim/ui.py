@@ -2,22 +2,24 @@ import time
 import curses
 from collections import namedtuple
 from curses import KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_UP
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, Generator, Optional, Tuple
+from enum import Enum, auto
+from typing import Callable, Dict, Generator, List, Optional, Protocol, Tuple, Union
 
 import typer
 
 from minesweeper_vim import game
+from minesweeper_vim.gamectl import GameCtl
 
 DELETE = 0x7F
-KEYMAP: Dict[int, str] = {
-    ord(" "): "l",
-    DELETE: "h",
-    KEY_DOWN: "j",
-    KEY_UP: "k",
-    KEY_LEFT: "h",
-    KEY_RIGHT: "l",
+KEYMAP: Dict[int, int] = {
+    ord(" "): ord("l"),
+    DELETE: ord("h"),
+    KEY_DOWN: ord("j"),
+    KEY_UP: ord("k"),
+    KEY_LEFT: ord("h"),
+    KEY_RIGHT: ord("l"),
 }
 CELL_STR = "[ ]"
 FLAG_CELL_STR = "[x]"
@@ -33,24 +35,189 @@ class Cursor(Yx):
         return Cursor(y + 1, x * 3 + 1)
 
 
-@dataclass
+class KeypressHandler(Protocol):
+    def handle_keypress(self, key: int) -> Optional[Cursor]:
+        ...
+
+    @property
+    def cursor(self) -> Cursor:
+        ...
+
+
+class HeaderComponent:
+    header: str
+
+    def __init__(self, width: int):
+        self.header = f"MiNeSwEePeR{' '*(width*3-15)}000s\n"
+
+    def __str__(self) -> str:
+        return self.header
+
+
+class BoardComponent:
+    CELL_STR: str = "[ ]"
+    FLAG_CELL_STR: str = "[x]"
+    board: str
+    width: int
+    height: int
+    _cursor: Cursor
+
+    def __init__(self, width: int, height: int):
+        self.width = width
+        self.height = height
+        self.board = (self.CELL_STR * width + "\n") * height
+        self._cursor = Cursor.from_model(0, 0)
+
+    def __str__(self) -> str:
+        return self.board
+
+    @property
+    def cursor(self) -> Cursor:
+        return self._cursor
+
+    @property
+    def cursor_left(self) -> Cursor:
+        xy = self.cursor.to_model()
+        if xy[0] > 0:
+            self._cursor = Cursor.from_model(xy[0] - 1, xy[1])
+        return self.cursor
+
+    @property
+    def cursor_right(self) -> Cursor:
+        xy = self.cursor.to_model()
+        if xy[0] < self.width - 1:
+            self._cursor = Cursor.from_model(xy[0] + 1, xy[1])
+        return self.cursor
+
+    def handle_keypress(self, key: int) -> Optional[Cursor]:
+        cursor: Optional[Cursor] = self.cursor
+        if key == ord(":"):
+            cursor = None
+        elif key == ord("h"):
+            cursor = self.cursor_left
+        elif key == ord("l"):
+            cursor = self.cursor_right
+        # "b": lambda x, y: game.prev_unswept(app.game.board, x, y),
+        # "h": lambda x, y: (x - 1, y) if x > 0 else (x, y),
+        # "j": lambda x, y: (x, y + 1) if y + 1 < app.game.height else (x, y),
+        # "k": lambda x, y: (x, y - 1) if y - 1 >= 0 else (x, y),
+        # "l": lambda x, y: (x + 1, y) if x < app.game.width - 1 else (x, y),
+        # "w": lambda x, y: game.next_unswept(app.game.board, x, y),
+        # "\n": lambda x, y: (0, y + 1) if y + 1 < app.game.height else (x, y),
+        # "0": lambda _, y: (0, y),
+        # "$": lambda _, y: (app.game.width - 1, y),
+        # "H": lambda _, __: (0, 0),
+        # "L": lambda _, __: (0, app.game.height - 1),
+        # "M": lambda _, __: (0, int((app.game.height - 1) / 2)),
+        return cursor
+
+
+class EdComponent:
+    CHOICES: List[str] = ["easy", "medium", "hard", "quit", "?"]
+    SHORTCUTS: List[int] = [ord(c) for c in "emaq?"]
+    SHORTCUT_POS = [2, 8, 17, 22, 28]
+    y: int
+    _cursor: Cursor
+
+    def __init__(self, y: int):
+        self.y = y
+        self._cursor = Cursor(y, self.SHORTCUT_POS[0])
+
+    def __str__(self) -> str:
+        return ":[" + "][".join(self.CHOICES) + "]"
+
+    @property
+    def str_parts(self) -> List[Tuple[str, int]]:
+        ret: List[Tuple[str, int]] = []
+        post = str(self)
+        for shortcut in self.SHORTCUTS:
+            pre, in_, post = post.partition(chr(shortcut))
+            ret.append((pre, curses.A_NORMAL))
+            ret.append((in_, curses.A_UNDERLINE))
+        ret.append((post, curses.A_NORMAL))
+        return ret
+
+    @property
+    def choice(self) -> str:
+        return self.CHOICES[self.SHORTCUT_POS.index(self.cursor.x)]
+
+    @property
+    def choice_i(self) -> int:
+        return self.SHORTCUT_POS.index(self.cursor.x)
+
+    @property
+    def cursor(self) -> Cursor:
+        return self._cursor
+
+    def choose_next(self) -> "EdComponent":
+        if self.choice_i < len(self.CHOICES) - 1:
+            self._cursor = Cursor(self.cursor.y, self.SHORTCUT_POS[self.choice_i + 1])
+        return self
+
+    def choose_prev(self) -> "EdComponent":
+        if self.choice_i > 0:
+            self._cursor = Cursor(self.cursor.y, self.SHORTCUT_POS[self.choice_i - 1])
+        return self
+
+    def choose_shortcut(self, shortcut: int) -> "EdComponent":
+        x = self.SHORTCUT_POS[self.SHORTCUTS.index(shortcut)]
+        self._cursor = Cursor(self.cursor.y, x)
+        return self
+
+    def handle_keypress(self, key: int) -> Optional[Cursor]:
+        cursor: Optional[Cursor] = self.cursor
+        if key == ord("\n"):
+            cursor = None
+        elif key in self.SHORTCUTS:
+            cursor = self.choose_shortcut(key).cursor
+        elif key in [ord("l"), ord("w")]:
+            cursor = self.choose_next().cursor
+        elif key in [ord("b"), ord("h")]:
+            cursor = self.choose_prev().cursor
+        return cursor
+
+
 class GameApp:
     stdscr: "curses._CursesWindow"
     game: game.Game
     cursor: Cursor = Cursor(1, 1)
+    ioctl: GameCtl = GameCtl()
+    keypress_handler: KeypressHandler
+    header: HeaderComponent
+    board: BoardComponent
+    ed: EdComponent
 
     @property
     def active_cell(self) -> game.Cell:
         return self._cell_at(self.cursor)
 
-    def __post_init__(self) -> None:
-        ui_board = (CELL_STR * self.game.width + "\n") * self.game.height
-        self.stdscr.clrtobot()
-        self.stdscr.addstr(
-            0, 0, f"MiNeSwEePeR{' '*(self.game.width*3-15)}000s\n{ui_board}"
-        )
+    def __init__(self, stdscr: "curses._CursesWindow", game: game.Game) -> None:
+        self.stdscr = stdscr
+        self.game = game
+        self.header = HeaderComponent(self.game.width)
+        self.board = BoardComponent(self.game.width, self.game.height)
+        self.ed = EdComponent(self.game.height + 1)
+        self.stdscr.clear()
         self.stdscr.nodelay(True)
-        self._redraw_cursor()
+        self.stdscr.addstr(0, 0, str(self.header))
+        self.stdscr.addstr(str(self.board))
+        for s, attr in self.ed.str_parts:
+            self.stdscr.addstr(s, attr)
+        self.move_to(self.ed.cursor)
+        self.keypress_handler = self.ed
+
+    def handle_keypress(self) -> None:
+        c = ensure_ord(self.stdscr.get_wch())
+        c = KEYMAP.get(c, c)
+        cursor = self.keypress_handler.handle_keypress(c)
+        if not cursor:
+            self.toggle_keypress_handler()
+            cursor = self.keypress_handler.cursor
+        self.move_to(cursor)
+
+    def toggle_keypress_handler(self) -> None:
+        is_ed = self.keypress_handler == self.ed
+        self.keypress_handler = self.board if is_ed else self.board
 
     def move_to(self, cursor: Cursor) -> None:
         self.cursor = cursor
@@ -113,6 +280,10 @@ class GameApp:
         self.stdscr.move(*self.cursor)
 
 
+def ensure_ord(c: Union[int, str]) -> int:
+    return c if isinstance(c, int) else ord(c)
+
+
 def c_main(stdscr: "curses._CursesWindow") -> int:
     dims = {"easy": game.EASY, "medium": game.MEDIUM, "hard": game.HARD}
     app = GameApp(stdscr, game.create_game(*game.EASY))
@@ -130,11 +301,14 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
         "L": lambda _, __: (0, app.game.height - 1),
         "M": lambda _, __: (0, int((app.game.height - 1) / 2)),
     }
+    ctl = GameCtl()
+    ctl.register_callback(lambda: app.handle_keypress())
     difficulty = ed_choose(app)
     if difficulty != "easy":
         app = GameApp(stdscr, game.create_game(*dims[difficulty]))
-    else:
-        overwrite_str(app.stdscr, 0, app.game.height + 1, " " * 30)
+    app.move_to(Cursor(app.ed.y, 0))
+    app.stdscr.clrtobot()
+    app.move_to(app.board.cursor)
     for c in async_input(stdscr):
         if c == ":":
             app = GameApp(stdscr, game.create_game(*dims[ed_choose(app)]))
@@ -177,15 +351,9 @@ def ed_choose(app: GameApp) -> Optional[str]:
     shortcuts = list("emaq?")
     positions = [2, 8, 17, 22, 28]
     y = app.game.height + 1
-    cursor = app.cursor
-    app.stdscr.addstr(y, 0, ":")
-    for s in choices:
-        ed_add_selection(app, s)
     choice = 0
-    app.move_to(Cursor(y, positions[choice]))
     for c in async_input(app.stdscr):
         if c == "\n":
-            app.move_to(cursor)
             return choices[choice].replace("_", "")
         if c in "lw":
             choice = choice + (1 if choice + 1 < len(choices) else 0)
@@ -195,17 +363,6 @@ def ed_choose(app: GameApp) -> Optional[str]:
             choice = shortcuts.index(c)
         app.move_to(Cursor(y, positions[choice]))
     return None
-
-
-def ed_add_selection(app: GameApp, text: str) -> None:
-    app.stdscr.addstr("[")
-    attr = 0
-    for c in text:
-        if c == "_":
-            attr = 0 if attr else curses.A_UNDERLINE
-        else:
-            app.stdscr.addstr(c, attr)
-    app.stdscr.addstr("]")
 
 
 def bye(app: GameApp, msg: str) -> None:

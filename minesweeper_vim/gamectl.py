@@ -22,13 +22,13 @@ class GameCtl:
     timers: List[Timer] = field(default_factory=list)
 
     def register_callback(
-        self, callback: Callable[..., None], interval: int = 1
+        self, callback: Callable[..., None], interval: int = 100
     ) -> None:
         self.timers.append(Timer(callback, interval))
 
     def ioloop(self) -> None:
         while True:
-            sleep(0.001)
+            sleep(0.1)
             for timer in self.timers:
                 if time_ms() > timer.deadline_ms:
                     timer.callback()
