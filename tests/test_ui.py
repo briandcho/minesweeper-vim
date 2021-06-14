@@ -26,6 +26,9 @@ def test_ed_handle_keypress() -> None:
         pytest.param(ord("q"), ui.Cursor(2, 4), id="unimplemented"),
         pytest.param(ord("h"), ui.Cursor(2, 1), id="left"),
         pytest.param(ord("l"), ui.Cursor(2, 7), id="right"),
+        pytest.param(ord("k"), ui.Cursor(1, 4), id="up"),
+        pytest.param(ord("j"), ui.Cursor(3, 4), id="down"),
+        pytest.param(ord("0"), ui.Cursor(2, 1), id="beginning of line"),
     ],
 )
 def test_board_handle_keypress(key: int, cursor: Optional[ui.Cursor]) -> None:

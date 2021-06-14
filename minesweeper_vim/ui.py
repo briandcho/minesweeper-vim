@@ -77,31 +77,41 @@ class BoardComponent:
 
     @property
     def cursor_left(self) -> Cursor:
-        xy = self.cursor.to_model()
-        if xy[0] > 0:
-            self._cursor = Cursor.from_model(xy[0] - 1, xy[1])
-        return self.cursor
+        x, y = self.cursor.to_model()
+        return Cursor.from_model(x - 1, y) if x > 0 else self.cursor
 
     @property
     def cursor_right(self) -> Cursor:
-        xy = self.cursor.to_model()
-        if xy[0] < self.width - 1:
-            self._cursor = Cursor.from_model(xy[0] + 1, xy[1])
-        return self.cursor
+        x, y = self.cursor.to_model()
+        return Cursor.from_model(x + 1, y) if x < self.width - 1 else self.cursor
+
+    @property
+    def cursor_up(self) -> Cursor:
+        x, y = self.cursor.to_model()
+        return Cursor.from_model(x, y - 1) if y > 0 else self.cursor
+
+    @property
+    def cursor_down(self) -> Cursor:
+        x, y = self.cursor.to_model()
+        return Cursor.from_model(x, y + 1) if y < self.height - 1 else self.cursor
+
+    @property
+    def cursor_start_of_row(self) -> Cursor:
+        return Cursor.from_model(0, self.cursor.to_model()[1])
 
     def handle_keypress(self, key: int) -> Optional[Cursor]:
-        cursor: Optional[Cursor] = self.cursor
-        if key == ord(":"):
-            cursor = None
-        elif key == ord("h"):
-            cursor = self.cursor_left
-        elif key == ord("l"):
-            cursor = self.cursor_right
+        keymap = {
+            ord(":"): None,
+            ord("h"): self.cursor_left,
+            ord("l"): self.cursor_right,
+            ord("k"): self.cursor_up,
+            ord("j"): self.cursor_down,
+            ord("0"): self.cursor_start_of_row,
+        }
+        if cursor := keymap.get(key, self.cursor):
+            self._cursor = cursor
+        return cursor
         # "b": lambda x, y: game.prev_unswept(app.game.board, x, y),
-        # "h": lambda x, y: (x - 1, y) if x > 0 else (x, y),
-        # "j": lambda x, y: (x, y + 1) if y + 1 < app.game.height else (x, y),
-        # "k": lambda x, y: (x, y - 1) if y - 1 >= 0 else (x, y),
-        # "l": lambda x, y: (x + 1, y) if x < app.game.width - 1 else (x, y),
         # "w": lambda x, y: game.next_unswept(app.game.board, x, y),
         # "\n": lambda x, y: (0, y + 1) if y + 1 < app.game.height else (x, y),
         # "0": lambda _, y: (0, y),
@@ -109,7 +119,6 @@ class BoardComponent:
         # "H": lambda _, __: (0, 0),
         # "L": lambda _, __: (0, app.game.height - 1),
         # "M": lambda _, __: (0, int((app.game.height - 1) / 2)),
-        return cursor
 
 
 class EdComponent:
