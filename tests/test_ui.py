@@ -29,6 +29,10 @@ def test_ed_handle_keypress() -> None:
         pytest.param(ord("k"), ui.Cursor(1, 4), id="up"),
         pytest.param(ord("j"), ui.Cursor(3, 4), id="down"),
         pytest.param(ord("0"), ui.Cursor(2, 1), id="beginning of line"),
+        pytest.param(ord("$"), ui.Cursor(2, 31), id="end of line"),
+        pytest.param(ord("H"), ui.Cursor(1, 1), id="beginning of first row"),
+        pytest.param(ord("L"), ui.Cursor(8, 1), id="beginning of last row"),
+        pytest.param(ord("M"), ui.Cursor(5, 1), id="beginning of middle row"),
     ],
 )
 def test_board_handle_keypress(key: int, cursor: Optional[ui.Cursor]) -> None:

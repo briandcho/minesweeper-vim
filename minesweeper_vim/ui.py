@@ -76,6 +76,11 @@ class BoardComponent:
         return self._cursor
 
     @property
+    def cursor_down(self) -> Cursor:
+        x, y = self.cursor.to_model()
+        return Cursor.from_model(x, y + 1) if y < self.height - 1 else self.cursor
+
+    @property
     def cursor_left(self) -> Cursor:
         x, y = self.cursor.to_model()
         return Cursor.from_model(x - 1, y) if x > 0 else self.cursor
@@ -91,22 +96,37 @@ class BoardComponent:
         return Cursor.from_model(x, y - 1) if y > 0 else self.cursor
 
     @property
-    def cursor_down(self) -> Cursor:
-        x, y = self.cursor.to_model()
-        return Cursor.from_model(x, y + 1) if y < self.height - 1 else self.cursor
-
-    @property
     def cursor_start_of_row(self) -> Cursor:
         return Cursor.from_model(0, self.cursor.to_model()[1])
 
+    @property
+    def cursor_start_of_first_row(self) -> Cursor:
+        return Cursor.from_model(0, 0)
+
+    @property
+    def cursor_start_of_last_row(self) -> Cursor:
+        return Cursor.from_model(0, self.height - 1)
+
+    @property
+    def cursor_start_of_middle_row(self) -> Cursor:
+        return Cursor.from_model(0, int(self.height / 2))
+
+    @property
+    def cursor_end_of_row(self) -> Cursor:
+        return Cursor.from_model(self.width, self.cursor.to_model()[1])
+
     def handle_keypress(self, key: int) -> Optional[Cursor]:
         keymap = {
-            ord(":"): None,
-            ord("h"): self.cursor_left,
-            ord("l"): self.cursor_right,
-            ord("k"): self.cursor_up,
-            ord("j"): self.cursor_down,
+            ord("$"): self.cursor_end_of_row,
             ord("0"): self.cursor_start_of_row,
+            ord(":"): None,
+            ord("H"): self.cursor_start_of_first_row,
+            ord("L"): self.cursor_start_of_last_row,
+            ord("M"): self.cursor_start_of_middle_row,
+            ord("h"): self.cursor_left,
+            ord("j"): self.cursor_down,
+            ord("k"): self.cursor_up,
+            ord("l"): self.cursor_right,
         }
         if cursor := keymap.get(key, self.cursor):
             self._cursor = cursor
@@ -114,11 +134,6 @@ class BoardComponent:
         # "b": lambda x, y: game.prev_unswept(app.game.board, x, y),
         # "w": lambda x, y: game.next_unswept(app.game.board, x, y),
         # "\n": lambda x, y: (0, y + 1) if y + 1 < app.game.height else (x, y),
-        # "0": lambda _, y: (0, y),
-        # "$": lambda _, y: (app.game.width - 1, y),
-        # "H": lambda _, __: (0, 0),
-        # "L": lambda _, __: (0, app.game.height - 1),
-        # "M": lambda _, __: (0, int((app.game.height - 1) / 2)),
 
 
 class EdComponent:
