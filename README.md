@@ -18,4 +18,3 @@ Controls
         [H] = beginning of 1st row
         [M] = beginning of middle row
         [L] = beginning of bottom row
-

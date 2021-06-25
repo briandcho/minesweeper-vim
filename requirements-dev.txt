@@ -1,7 +1,8 @@
 black
-pytest-cov
-pytest-pythonpath
-hecate
-pytest-mock
 flake8
+hecate
+pre-commit
+pytest-cov
+pytest-mock
+pytest-pythonpath
 setuptools
