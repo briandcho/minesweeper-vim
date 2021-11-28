@@ -1,14 +1,18 @@
+from typing import List
+
 import pytest
+from pytest_mock.plugin import MockerFixture
+
 from minesweeper_vim import game
 
 
-def test_initial_board_shuffles_mines():
+def test_initial_board_shuffles_mines() -> None:
     game_ = game.create_game(*game.EASY)
     assert game_.board == game_.board
     assert game.create_game(*game.EASY).board != game.create_game(*game.EASY).board
 
 
-def test_initial_board_numbers_mine_adjacent_cells(mocker):
+def test_initial_board_numbers_mine_adjacent_cells(mocker: MockerFixture) -> None:
     mocker.patch("minesweeper_vim.game.random")
     assert game.create_game(*game.EASY).board == game._to_cells(
         [
@@ -20,61 +24,61 @@ def test_initial_board_numbers_mine_adjacent_cells(mocker):
             [" ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
             [" ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
             [" ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
-        ]
+        ],
     )
 
 
-def test_next_unswept_skip_1():
+def test_next_unswept_skip_1() -> None:
     board = game._to_cells([["1", " "]])
     board[0][0].is_swept = True
     assert game.next_unswept(board, 0, 0) == (1, 0)
 
 
-def test_prev_unswept_skip_1():
+def test_prev_unswept_skip_1() -> None:
     board = game._to_cells([["1", " "]])
     board[0][1].is_swept = True
     assert game.prev_unswept(board, 1, 0) == (0, 0)
 
 
-def test_next_unswept_next_row():
+def test_next_unswept_next_row() -> None:
     board = game._to_cells([[" ", " "], [" ", " "]])
     assert game.next_unswept(board, 0, 0) == (0, 1)
 
 
-def test_prev_unswept_prev_row():
+def test_prev_unswept_prev_row() -> None:
     board = game._to_cells([[" ", " "], [" ", " "]])
     assert game.prev_unswept(board, 1, 1) == (1, 0)
 
 
-def test_next_unswept_end_of_row():
+def test_next_unswept_end_of_row() -> None:
     board = game._to_cells([[" ", " ", " "]])
     assert game.next_unswept(board, 0, 0) == (2, 0)
 
 
-def test_prev_unswept_beginning_of_row():
+def test_prev_unswept_beginning_of_row() -> None:
     board = game._to_cells([[" ", " ", " "]])
     assert game.prev_unswept(board, 2, 0) == (0, 0)
 
 
-def test_next_unswept_skip_unswept():
+def test_next_unswept_skip_unswept() -> None:
     board = game._to_cells([[" ", "1", " ", " "]])
     board[0][1].is_swept = True
     assert game.next_unswept(board, 0, 0) == (2, 0)
 
 
-def test_prev_unswept_skip_unswept():
+def test_prev_unswept_skip_unswept() -> None:
     board = game._to_cells([[" ", " ", "1", " "]])
     board[0][2].is_swept = True
     assert game.prev_unswept(board, 3, 0) == (1, 0)
 
 
-def test_next_unswept_next_row_skip_1():
+def test_next_unswept_next_row_skip_1() -> None:
     board = game._to_cells([[" ", " "], ["1", " "]])
     board[1][0].is_swept = True
     assert game.next_unswept(board, 0, 0) == (1, 1)
 
 
-def test_prev_unswept_prev_row_skip_1():
+def test_prev_unswept_prev_row_skip_1() -> None:
     board = game._to_cells([[" ", "1"], [" ", " "]])
     board[0][1].is_swept = True
     assert game.prev_unswept(board, 1, 1) == (0, 0)
@@ -85,13 +89,19 @@ def test_prev_unswept_prev_row_skip_1():
     [
         pytest.param([["*", " "], [" ", " "]], [["*", "1"], ["1", "1"]], id="top left"),
         pytest.param(
-            [[" ", "*"], [" ", " "]], [["1", "*"], ["1", "1"]], id="top right"
+            [[" ", "*"], [" ", " "]],
+            [["1", "*"], ["1", "1"]],
+            id="top right",
         ),
         pytest.param(
-            [[" ", " "], ["*", " "]], [["1", "1"], ["*", "1"]], id="bottom left"
+            [[" ", " "], ["*", " "]],
+            [["1", "1"], ["*", "1"]],
+            id="bottom left",
         ),
         pytest.param(
-            [[" ", " "], [" ", "*"]], [["1", "1"], ["1", "*"]], id="bottom right"
+            [[" ", " "], [" ", "*"]],
+            [["1", "1"], ["1", "*"]],
+            id="bottom right",
         ),
         pytest.param(
             [[" ", " ", " "], [" ", "*", " "], [" ", " ", " "]],
@@ -104,5 +114,5 @@ def test_prev_unswept_prev_row_skip_1():
         ),
     ],
 )
-def test_number_board(board, numbered):
+def test_number_board(board: List[str], numbered: List[str]) -> None:
     assert game.number_board(board) == numbered

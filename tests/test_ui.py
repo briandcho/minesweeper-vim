@@ -1,7 +1,9 @@
 from typing import Optional
+
 import pytest
-from minesweeper_vim import ui
 from pytest_mock import MockerFixture
+
+from minesweeper_vim import ui
 
 
 def test_ed_handle_keypress() -> None:
@@ -42,10 +44,13 @@ def test_board_handle_keypress(key: int, cursor: Optional[ui.Cursor]) -> None:
 
 
 @pytest.mark.parametrize(
-    "key,cursor", [("a", ui.Cursor(9, 17)), ("\n", ui.Cursor(1, 1))]
+    "key,cursor",
+    [("a", ui.Cursor(9, 17)), ("\n", ui.Cursor(1, 1))],
 )
 def test_app_handle_keypress(
-    key: str, cursor: ui.Cursor, mocker: MockerFixture
+    key: str,
+    cursor: ui.Cursor,
+    mocker: MockerFixture,
 ) -> None:
     mock_scr = mocker.MagicMock()
     mock_scr.get_wch.return_value = key

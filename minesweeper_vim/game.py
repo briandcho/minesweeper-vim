@@ -1,7 +1,9 @@
 import random
 from dataclasses import dataclass
 from itertools import chain
-from typing import List, Tuple
+from typing import Any
+from typing import List
+from typing import Tuple
 
 EASY = (10, 8, 10)
 MEDIUM = (18, 14, 40)
@@ -35,7 +37,7 @@ def create_game(width: int, height: int, n_mines: int) -> Game:
     return Game(width, height, n_mines, _to_cells(number_board(board)))
 
 
-def _to_cells(board) -> Board:
+def _to_cells(board: List[List[str]]) -> Board:
     rows = []
     for row in board:
         rows += [[Cell(v) for v in row]]
@@ -81,7 +83,7 @@ def is_loss(board: List[List[Cell]]) -> bool:
     return any(cell.is_swept and cell.value == "*" for cell in chain(*board))
 
 
-def number_board(board: List):
+def number_board(board: List[List[str]]) -> List[List[str]]:
     for y, row in enumerate(board):
         for x, sq in enumerate(row):
             if sq == "*":
@@ -89,14 +91,18 @@ def number_board(board: List):
     return board
 
 
-def bump_neighbor_cells(board: List, x: int, y: int):
+def bump_neighbor_cells(board: List[List[str]], x: int, y: int) -> None:
     for _x, _y in get_neighbor_cells(board, x, y):
         if board[_y][_x] != "*":
             v = 1 if board[_y][_x] == " " else int(board[_y][_x]) + 1
             board[_y][_x] = str(v)
 
 
-def get_unmarked_neighbor_cells(board: List, x: int, y: int) -> List[Tuple[int, int]]:
+def get_unmarked_neighbor_cells(
+    board: List[List[Cell]],
+    x: int,
+    y: int,
+) -> List[Tuple[int, int]]:
     unswept_cells = get_unswept_neighbor_cells(board, x, y)
     n_flags = [board[y][x].is_flag for (x, y) in unswept_cells].count(True)
     cell = board[y][x]
@@ -105,12 +111,20 @@ def get_unmarked_neighbor_cells(board: List, x: int, y: int) -> List[Tuple[int, 
     return []
 
 
-def get_unswept_neighbor_cells(board: List, x: int, y: int) -> List[Tuple[int, int]]:
+def get_unswept_neighbor_cells(
+    board: List[List[Cell]],
+    x: int,
+    y: int,
+) -> List[Tuple[int, int]]:
     xys = get_neighbor_cells(board, x, y)
     return [(x, y) for x, y in xys if not board[y][x].is_swept]
 
 
-def get_neighbor_cells(board: List, x: int, y: int) -> List[Tuple[int, int]]:
+def get_neighbor_cells(
+    board: List[List[Any]],
+    x: int,
+    y: int,
+) -> List[Tuple[int, int]]:
     neighbor_cells = [
         (x - 1, y - 1),
         (x, y - 1),

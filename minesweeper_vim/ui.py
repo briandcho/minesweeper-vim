@@ -1,11 +1,18 @@
 import time
 import curses
 from collections import namedtuple
-from curses import KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_UP
-from dataclasses import dataclass, field
+from curses import KEY_DOWN
+from curses import KEY_LEFT
+from curses import KEY_RIGHT
+from curses import KEY_UP
 from datetime import datetime
-from enum import Enum, auto
-from typing import Callable, Dict, Generator, List, Optional, Protocol, Tuple, Union
+from typing import Dict
+from typing import Generator
+from typing import List
+from typing import Optional
+from typing import Protocol
+from typing import Tuple
+from typing import Union
 
 import typer
 
@@ -329,22 +336,22 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
     ctl.register_callback(lambda: app.handle_keypress())
     difficulty = ed_choose(app)
     if difficulty != "easy":
-        app = GameApp(stdscr, game.create_game(*dims[difficulty]))
+        app = GameApp(stdscr, game.create_game(*dims[difficulty or ""]))
     app.move_to(Cursor(app.ed.y, 0))
     app.stdscr.clrtobot()
     app.move_to(app.board.cursor)
     for c in async_input(stdscr):
         if c == ":":
-            app = GameApp(stdscr, game.create_game(*dims[ed_choose(app)]))
+            app = GameApp(stdscr, game.create_game(*dims[ed_choose(app) or ""]))
         elif c == "x":
             app.sweep_cell()
             if game.is_loss(app.game.board):
                 app.reveal_mines()
                 bye(app, "Game Over  ")
-                app = GameApp(stdscr, game.create_game(*dims[ed_choose(app)]))
+                app = GameApp(stdscr, game.create_game(*dims[ed_choose(app) or ""]))
             elif game.is_win(app.game.board):
                 bye(app, "You win!   ")
-                app = GameApp(stdscr, game.create_game(*dims[ed_choose(app)]))
+                app = GameApp(stdscr, game.create_game(*dims[ed_choose(app) or ""]))
         elif c == "m":
             app.mark_cell()
         elif c in mv:
@@ -363,7 +370,7 @@ def async_input(stdscr: "curses._CursesWindow") -> Generator[str, None, None]:
                 elapsed_time = datetime.now() - start_time
                 overwrite_str(stdscr, 26, 0, f"{elapsed_time.seconds:03}")
             c = stdscr.get_wch()
-            yield KEYMAP.get(c if isinstance(c, int) else ord(c), c)
+            yield str(KEYMAP.get(c if isinstance(c, int) else ord(c), c))
         except curses.error:
             continue
         if not start_time:

@@ -1,6 +1,9 @@
-from dataclasses import dataclass, field
-from time import sleep, time
-from typing import Callable, List
+from dataclasses import dataclass
+from dataclasses import field
+from time import sleep
+from time import time
+from typing import Callable
+from typing import List
 
 
 def time_ms() -> int:
@@ -22,7 +25,9 @@ class GameCtl:
     timers: List[Timer] = field(default_factory=list)
 
     def register_callback(
-        self, callback: Callable[..., None], interval: int = 100
+        self,
+        callback: Callable[..., None],
+        interval: int = 100,
     ) -> None:
         self.timers.append(Timer(callback, interval))
 

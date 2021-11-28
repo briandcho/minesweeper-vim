@@ -1,7 +1,11 @@
 # minesweeper-vim
+
 Curses-based minesweeper with (sort of) vim bindings
 
-Controls
+
+## Controls
+
+```
        [Up]             [k]
 [Left][Down][Right]  [h][j][l]
 
@@ -18,3 +22,4 @@ Controls
         [H] = beginning of 1st row
         [M] = beginning of middle row
         [L] = beginning of bottom row
+```
