@@ -1,3 +1,4 @@
+import time
 import curses
 from collections import namedtuple
 from dataclasses import dataclass
@@ -157,6 +158,7 @@ def async_input(stdscr: "curses._CursesWindow") -> Generator:
     start_time = None
     while True:
         try:
+            time.sleep(.04)
             if start_time:
                 elapsed_time = datetime.now() - start_time
                 overwrite_str(stdscr, 26, 0, f"{elapsed_time.seconds:03}")
