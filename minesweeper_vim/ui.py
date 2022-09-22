@@ -1,5 +1,5 @@
-import time
 import curses
+import time
 from collections import namedtuple
 from curses import KEY_DOWN
 from curses import KEY_LEFT
@@ -364,8 +364,9 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
 def async_input(stdscr: "curses._CursesWindow") -> Generator[str, None, None]:
     start_time = None
     while True:
+        time.sleep(0.04)
         try:
-            time.sleep(.04)
+            time.sleep(0.04)
             if start_time:
                 elapsed_time = datetime.now() - start_time
                 overwrite_str(stdscr, 26, 0, f"{elapsed_time.seconds:03}")
