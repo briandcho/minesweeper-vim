@@ -3,7 +3,7 @@ import time
 from collections import namedtuple
 from collections.abc import Generator
 from curses import KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_UP
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import ClassVar, Protocol
 
 from minesweeper_vim import game
@@ -357,14 +357,14 @@ def async_input(stdscr: "curses.window") -> Generator[str, None, None]:
         try:
             time.sleep(0.04)
             if start_time:
-                elapsed_time = datetime.now(timezone.utc) - start_time
+                elapsed_time = datetime.now(UTC) - start_time
                 overwrite_str(stdscr, 26, 0, f"{elapsed_time.seconds:03}")
             c = stdscr.get_wch()
             yield str(KEYMAP.get(c if isinstance(c, int) else ord(c), c))
         except curses.error:
             continue
         if not start_time:
-            start_time = datetime.now(timezone.utc)
+            start_time = datetime.now(UTC)
 
 
 def ed_choose(app: GameApp) -> str | None:

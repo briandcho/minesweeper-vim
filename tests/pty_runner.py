@@ -5,15 +5,10 @@ import signal
 import time
 from collections.abc import Generator
 from types import TracebackType
-from typing import TYPE_CHECKING
+from typing import Self
 
 import pexpect
 import pyte
-
-if TYPE_CHECKING:
-    # typing.Self needs Python 3.11+; this project supports 3.10+, so only
-    # import it for type checking, never at runtime.
-    from typing import Self
 
 DEFAULT_WIDTH = 80
 DEFAULT_HEIGHT = 24
