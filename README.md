@@ -2,6 +2,31 @@
 
 Curses-based minesweeper with (sort of) vim bindings
 
+## Installation
+
+Install from PyPI:
+
+```sh
+pip install minesweeper-vim
+```
+
+## Usage
+
+Run the game:
+
+```sh
+minesweeper-vim
+# or, for a repeatable board:
+minesweeper-vim --seed 1
+```
+
+Display the version:
+
+```sh
+minesweeper-vim --version
+# or
+minesweeper-vim -V
+```
 
 ## Controls
 
@@ -22,4 +47,73 @@ Curses-based minesweeper with (sort of) vim bindings
         [H] = beginning of 1st row
         [M] = beginning of middle row
         [L] = beginning of bottom row
+```
+
+## Development
+
+### First-time setup
+
+A freshly generated project needs two one-time steps before `tox` will work:
+
+1. `git init` (if this isn't already a git repo) — `setuptools-scm` computes the package version
+   from git metadata and errors out (`ERROR setuptools-scm was unable to detect version`) outside
+   a git repo.
+2. `tox -e update_deps` — generates `requirements.txt`/`requirements-dev.txt` via `pip-compile`.
+   These aren't shipped by the template (they're pinned to whatever resolves them), but `tox -e py`
+   and bare `tox` install from `requirements-dev.txt`, so it must exist first.
+
+### Install pre-commit hooks (including commit message checks)
+
+This repo enforces Conventional Commits via a `commit-msg` hook (Commitizen). Most checks run on every commit; `pip-audit` (a network-bound dependency vulnerability scan) and `checkov` (an IaC scanner) are deferred to `pre-push` so they don't slow down every commit.
+
+Install hooks locally:
+
+```sh
+pre-commit install --hook-type pre-commit --hook-type pre-push --hook-type commit-msg
+# optional: run all hooks (including pip-audit) against the repo once
+pre-commit run --all-files --hook-stage pre-push
+```
+
+If you see a commit rejected, format your message using Conventional Commits, for example:
+
+```text
+feat: add new subcommand
+fix(cli): handle empty args
+chore(deps): weekly dependency updates
+```
+
+You can also use Commitizen to guide you:
+
+```sh
+cz commit
+# or without installing: pipx run commitizen commit
+```
+
+### Use tox for development
+
+This project uses `tox` to run tests and checks consistently across environments.
+
+- Run tests and coverage:
+
+```sh
+tox -e py
+```
+
+- Run all pre-commit hooks (format, lint, type-check, security, etc.):
+
+```sh
+tox -e pre-commit
+```
+
+- Run the pre-push-only hooks too (`pip-audit`, `checkov`) by passing extra args through to
+  `pre-commit run` after `--`:
+
+```sh
+tox -e pre-commit -- --hook-stage pre-push
+```
+
+- Update pinned dependencies and pre-commit hooks:
+
+```sh
+tox -e update_deps
 ```
