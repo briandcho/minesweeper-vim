@@ -20,12 +20,15 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
 ]
+urls.Homepage = "https://github.com/briandcho/minesweeper-vim"
 dynamic = [
   "version",
 ]
 optional-dependencies.dev = [
   "covdefaults",
+  "hecate",
   "pytest-cov",
+  "pytest-mock",
 ]
 scripts.minesweeper-vim = "minesweeper_vim:main"
 
@@ -45,6 +48,9 @@ check_untyped_defs = true
 warn_redundant_casts = true
 warn_unused_ignores = true
 overrides = [ { module = "tests.*", disallow_untyped_defs = false } ]
+
+[tool.ruff]
+line-length = 100
 
 [tool.coverage]
 run.plugins = [ "covdefaults" ]
@@ -76,7 +82,7 @@ env.update_deps.commands = [
 ]
 env_run_base.description = "Run pytest with coverage"
 # package = "editable" installs the project package (editable) into the env; without it,
-# __version__'s importlib.metadata lookup in minesweeper_vim.py raises PackageNotFoundError.
+# __version__'s importlib.metadata lookup in minesweeper_vim/__init__.py raises PackageNotFoundError.
 env_run_base.package = "editable"
 env_run_base.deps = [ "-r requirements-dev.txt" ]
 env_run_base.pass_env = [ "PYTHONPATH" ]
