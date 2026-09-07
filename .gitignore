@@ -1,11 +1,31 @@
-*.egg-info
-*.pyc
+# Vim swap files
 *.swp
-/.coverage
-/.coverage.*
-/.mypy_cache
-/.pytest_cache
-/.tox
-/build
-/dist
-/venv*
+*.swo
+*.swx
+.*.swp
+.*.swo
+.*.swx
+
+# Python artifacts
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.tox/
+*.egg-info/
+dist/
+build/
+.coverage
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+.tox/
+
+# Vim swap files
+*.swp
+*.swo
+*.swx
+.*.swp
+.*.swo
+.*.swx

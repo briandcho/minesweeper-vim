@@ -1,0 +1,90 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [ "setuptools>=77", "setuptools-scm>=8" ]
+
+[project]
+name = "minesweeper-vim"
+description = "Curses-based minesweeper with (sort of) vim bindings"
+readme = "README.md"
+license = "MIT"
+license-files = [ "LICENSE" ]
+authors = [
+  { name = "Brian Cho", email = "bdcho74@gmail.com" },
+]
+requires-python = ">=3.10"
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+]
+dynamic = [
+  "version",
+]
+optional-dependencies.dev = [
+  "covdefaults",
+  "pytest-cov",
+]
+scripts.minesweeper-vim = "minesweeper_vim:main"
+
+[tool.setuptools]
+packages.find.exclude = [ "tests", "tests.*" ]
+package-dir = { "" = "." }
+
+[tool.setuptools_scm]
+version_scheme = "guess-next-dev"
+local_scheme = "node-and-date"
+
+[tool.mypy]
+disallow_any_generics = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+overrides = [ { module = "tests.*", disallow_untyped_defs = false } ]
+
+[tool.coverage]
+run.plugins = [ "covdefaults" ]
+
+[tool.tox]
+env_list = [ "pre-commit", "py" ]
+env.pre-commit.description = "Run pre-commit hooks (excludes pre-push-only checks like pip-audit, checkov)"
+env.pre-commit.skip_install = true
+env.pre-commit.deps = [ "pre-commit" ]
+# pip-audit and checkov (stages: [pre-push]) are deliberately excluded here to keep this fast
+# for local dev use; they still run on `git push` (if the pre-push hook type is installed) and
+# as standalone steps in CI's security job.
+env.pre-commit.commands = [
+  [
+    "pre-commit",
+    "run",
+    "--all-files",
+    "--show-diff-on-failure",
+    { replace = "posargs", default = [ ], extend = true },
+  ],
+]
+env.update_deps.description = "Update requirements*.txt files and pre-commit hooks"
+env.update_deps.skip_install = true
+env.update_deps.deps = [ "pip-tools", "pre-commit" ]
+env.update_deps.commands = [
+  [ "pip-compile", "pyproject.toml", "--generate-hashes" ],
+  [ "pip-compile", "pyproject.toml", "--extra", "dev", "--output-file=requirements-dev.txt" ],
+  [ "pre-commit", "autoupdate" ],
+]
+env_run_base.description = "Run pytest with coverage"
+# package = "editable" installs the project package (editable) into the env; without it,
+# __version__'s importlib.metadata lookup in minesweeper_vim.py raises PackageNotFoundError.
+env_run_base.package = "editable"
+env_run_base.deps = [ "-r requirements-dev.txt" ]
+env_run_base.pass_env = [ "PYTHONPATH" ]
+env_run_base.commands = [
+  [ "coverage", "erase" ],
+  [ "coverage", "run", "-m", "pytest" ],
+  [ "coverage", "report", "--show-missing" ],
+]
+
+[tool.commitizen]
+name = "cz_conventional_commits"

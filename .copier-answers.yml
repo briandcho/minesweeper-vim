@@ -1,0 +1,7 @@
+# Changes here will be overwritten by Copier
+_commit: v1.1.1
+_src_path: https://github.com/briandcho/minimal-cli
+author_email: bdcho74@gmail.com
+author_name: Brian Cho
+description: Curses-based minesweeper with (sort of) vim bindings
+project_name: minesweeper-vim
