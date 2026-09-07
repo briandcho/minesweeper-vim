@@ -112,5 +112,5 @@ def test_prev_unswept_prev_row_skip_1() -> None:
         ),
     ],
 )
-def test_number_board(board: list[str], numbered: list[str]) -> None:
+def test_number_board(board: list[list[str]], numbered: list[list[str]]) -> None:
     assert game.number_board(board) == numbered

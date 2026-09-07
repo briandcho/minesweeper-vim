@@ -10,7 +10,7 @@ def cursor_left() -> None: ...
 
 class KeyMap:
     key: str
-    action: Callable
+    action: Callable[[], None]
 
 
 KEYMAP = {"l": cursor_left}

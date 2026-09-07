@@ -20,13 +20,13 @@ def test_version_string(flag, capsys):
     assert out.strip() == __version__
 
 
-def test_main_without_args(mocker: MockerFixture):
+def test_main_without_args(mocker: MockerFixture) -> None:
     mock_ui_main = mocker.patch("minesweeper_vim.__main__.ui.main", return_value=0)
     assert main([]) == 0
     mock_ui_main.assert_called_once_with(0)
 
 
-def test_main_passes_seed(mocker: MockerFixture):
+def test_main_passes_seed(mocker: MockerFixture) -> None:
     mock_ui_main = mocker.patch("minesweeper_vim.__main__.ui.main", return_value=0)
     assert main(["--seed", "42"]) == 0
     mock_ui_main.assert_called_once_with(42)

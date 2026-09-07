@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Protocol
 
 from minesweeper_vim import game
+from minesweeper_vim.game import Cell, Game
 from minesweeper_vim.gamectl import GameCtl
 
 DELETE = 0x7F
@@ -197,8 +198,8 @@ class EdComponent:
 
 
 class GameApp:
-    stdscr: "curses._CursesWindow"
-    game: game.Game
+    stdscr: "curses.window"
+    game: Game
     cursor: Cursor = Cursor(1, 1)
     ioctl: GameCtl = GameCtl()
     keypress_handler: KeypressHandler
@@ -207,10 +208,10 @@ class GameApp:
     ed: EdComponent
 
     @property
-    def active_cell(self) -> game.Cell:
+    def active_cell(self) -> Cell:
         return self._cell_at(self.cursor)
 
-    def __init__(self, stdscr: "curses._CursesWindow", game: game.Game) -> None:
+    def __init__(self, stdscr: "curses.window", game: Game) -> None:
         self.stdscr = stdscr
         self.game = game
         self.header = HeaderComponent(self.game.width)
@@ -283,7 +284,7 @@ class GameApp:
             cell.is_swept = True
         self._redraw_cell(cursor)
 
-    def _cell_at(self, cursor: Cursor) -> game.Cell:
+    def _cell_at(self, cursor: Cursor) -> Cell:
         x, y = cursor.to_model()
         return self.game.board[y][x]
 
@@ -303,7 +304,7 @@ def ensure_ord(c: int | str) -> int:
     return c if isinstance(c, int) else ord(c)
 
 
-def c_main(stdscr: "curses._CursesWindow") -> int:
+def c_main(stdscr: "curses.window") -> int:
     dims = {"easy": game.EASY, "medium": game.MEDIUM, "hard": game.HARD}
     app = GameApp(stdscr, game.create_game(*game.EASY))
     mv = {
@@ -349,7 +350,7 @@ def c_main(stdscr: "curses._CursesWindow") -> int:
     return 0
 
 
-def async_input(stdscr: "curses._CursesWindow") -> Generator[str, None, None]:
+def async_input(stdscr: "curses.window") -> Generator[str, None, None]:
     start_time = None
     while True:
         time.sleep(0.04)
@@ -389,7 +390,7 @@ def bye(app: GameApp, msg: str) -> None:
     overwrite_str(app.stdscr, 0, 0, msg)
 
 
-def overwrite_str(stdscr: "curses._CursesWindow", x: int, y: int, s: str) -> None:
+def overwrite_str(stdscr: "curses.window", x: int, y: int, s: str) -> None:
     cursor = stdscr.getyx()
     for _ in range(len(s)):
         stdscr.delch(y, x)

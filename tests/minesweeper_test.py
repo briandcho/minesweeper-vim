@@ -1,4 +1,5 @@
 import sys
+from collections.abc import Generator
 from time import sleep
 
 import pytest
@@ -81,7 +82,7 @@ def test_minesweeper_start_timer_when_difficulty_selected(runner: Runner) -> Non
 
 
 @pytest.fixture
-def runner() -> Runner:
+def runner() -> Generator[Runner]:
     """Seed 1
     1  *  2  *  1           1  *
     1  1  2  1  1  1  1  1  1  1
