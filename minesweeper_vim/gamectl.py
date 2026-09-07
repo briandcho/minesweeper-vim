@@ -1,9 +1,6 @@
-from dataclasses import dataclass
-from dataclasses import field
-from time import sleep
-from time import time
-from typing import Callable
-from typing import List
+from dataclasses import dataclass, field
+from time import sleep, time
+from typing import Callable, List
 
 
 def time_ms() -> int:

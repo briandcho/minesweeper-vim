@@ -1,18 +1,9 @@
 import curses
 import time
 from collections import namedtuple
-from curses import KEY_DOWN
-from curses import KEY_LEFT
-from curses import KEY_RIGHT
-from curses import KEY_UP
+from curses import KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_UP
 from datetime import datetime
-from typing import Dict
-from typing import Generator
-from typing import List
-from typing import Optional
-from typing import Protocol
-from typing import Tuple
-from typing import Union
+from typing import Dict, Generator, List, Optional, Protocol, Tuple, Union
 
 import typer
 

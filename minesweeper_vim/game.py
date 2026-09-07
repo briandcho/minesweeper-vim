@@ -1,9 +1,7 @@
 import random
 from dataclasses import dataclass
 from itertools import chain
-from typing import Any
-from typing import List
-from typing import Tuple
+from typing import Any, List, Tuple
 
 EASY = (10, 8, 10)
 MEDIUM = (18, 14, 40)

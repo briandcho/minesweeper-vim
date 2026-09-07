@@ -1,22 +1,22 @@
-# See https://pre-commit.com for more information
-# See https://pre-commit.com/hooks.html for more hooks
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.3.0
     hooks:
+    -   id: check-added-large-files
     -   id: check-ast
     -   id: check-docstring-first
     -   id: check-yaml
     -   id: debug-statements
     -   id: end-of-file-fixer
     -   id: mixed-line-ending
+    -   id: name-tests-test
     -   id: requirements-txt-fixer
     -   id: trailing-whitespace
--   repo: https://github.com/asottile/reorder_python_imports
-    rev: v3.8.2
+-   repo: https://github.com/pycqa/isort
+    rev: 5.10.1
     hooks:
-    -   id: reorder-python-imports
-        args: [--py3-plus]
+    - id: isort
+      args: ["--profile", "black", "--filter-files"]
 -   repo: https://github.com/PyCQA/flake8
     rev: 5.0.4
     hooks:
@@ -25,11 +25,6 @@ repos:
     rev: 22.8.0
     hooks:
     -   id: black
--   repo: https://github.com/asottile/add-trailing-comma
-    rev: v2.2.3
-    hooks:
-    -   id: add-trailing-comma
-        args: [--py36-plus]
 -   repo: https://github.com/asottile/pyupgrade
     rev: v2.38.0
     hooks:
