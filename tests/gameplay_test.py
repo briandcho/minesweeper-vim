@@ -1,5 +1,3 @@
-from typing import List
-
 import pytest
 from pytest_mock.plugin import MockerFixture
 
@@ -114,5 +112,5 @@ def test_prev_unswept_prev_row_skip_1() -> None:
         ),
     ],
 )
-def test_number_board(board: List[str], numbered: List[str]) -> None:
+def test_number_board(board: list[str], numbered: list[str]) -> None:
     assert game.number_board(board) == numbered

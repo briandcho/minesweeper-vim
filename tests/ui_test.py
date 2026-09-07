@@ -1,5 +1,3 @@
-from typing import Optional
-
 import pytest
 from pytest_mock import MockerFixture
 
@@ -37,7 +35,7 @@ def test_ed_handle_keypress() -> None:
         pytest.param(ord("M"), ui.Cursor(5, 1), id="beginning of middle row"),
     ],
 )
-def test_board_handle_keypress(key: int, cursor: Optional[ui.Cursor]) -> None:
+def test_board_handle_keypress(key: int, cursor: ui.Cursor | None) -> None:
     board = ui.BoardComponent(*ui.game.EASY[:2])
     board._cursor = ui.Cursor(2, 4)
     assert board.handle_keypress(key) == cursor

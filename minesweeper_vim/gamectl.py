@@ -1,6 +1,6 @@
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from time import sleep, time
-from typing import Callable, List
 
 
 def time_ms() -> int:
@@ -19,7 +19,7 @@ class Timer:
 
 @dataclass
 class GameCtl:
-    timers: List[Timer] = field(default_factory=list)
+    timers: list[Timer] = field(default_factory=list)
 
     def register_callback(
         self,

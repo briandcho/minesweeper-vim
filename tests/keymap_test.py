@@ -1,14 +1,11 @@
-from typing import Callable
+from collections.abc import Callable
 
 CFG = """\
 Hi
 """
 
-from dataclasses import dataclass
 
-
-def cursor_left() -> None:
-    ...
+def cursor_left() -> None: ...
 
 
 class KeyMap:
