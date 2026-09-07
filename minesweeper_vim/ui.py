@@ -1,17 +1,16 @@
 import curses
 import time
 from collections import namedtuple
+from collections.abc import Generator
 from curses import KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_UP
 from datetime import datetime
-from typing import Dict, Generator, List, Optional, Protocol, Tuple, Union
-
-import typer
+from typing import Protocol
 
 from minesweeper_vim import game
 from minesweeper_vim.gamectl import GameCtl
 
 DELETE = 0x7F
-KEYMAP: Dict[int, int] = {
+KEYMAP: dict[int, int] = {
     ord(" "): ord("l"),
     DELETE: ord("h"),
     KEY_DOWN: ord("j"),
@@ -25,7 +24,7 @@ Yx = namedtuple("Yx", ["y", "x"])
 
 
 class Cursor(Yx):
-    def to_model(self) -> Tuple[int, int]:
+    def to_model(self) -> tuple[int, int]:
         return (int((self.x - 1) / 3), self.y - 1)
 
     @staticmethod
@@ -34,19 +33,17 @@ class Cursor(Yx):
 
 
 class KeypressHandler(Protocol):
-    def handle_keypress(self, key: int) -> Optional[Cursor]:
-        ...
+    def handle_keypress(self, key: int) -> Cursor | None: ...
 
     @property
-    def cursor(self) -> Cursor:
-        ...
+    def cursor(self) -> Cursor: ...
 
 
 class HeaderComponent:
     header: str
 
     def __init__(self, width: int):
-        self.header = f"MiNeSwEePeR{' '*(width*3-15)}000s\n"
+        self.header = f"MiNeSwEePeR{' ' * (width * 3 - 15)}000s\n"
 
     def __str__(self) -> str:
         return self.header
@@ -113,7 +110,7 @@ class BoardComponent:
     def cursor_end_of_row(self) -> Cursor:
         return Cursor.from_model(self.width, self.cursor.to_model()[1])
 
-    def handle_keypress(self, key: int) -> Optional[Cursor]:
+    def handle_keypress(self, key: int) -> Cursor | None:
         keymap = {
             ord("$"): self.cursor_end_of_row,
             ord("0"): self.cursor_start_of_row,
@@ -135,8 +132,8 @@ class BoardComponent:
 
 
 class EdComponent:
-    CHOICES: List[str] = ["easy", "medium", "hard", "quit", "?"]
-    SHORTCUTS: List[int] = [ord(c) for c in "emaq?"]
+    CHOICES: list[str] = ["easy", "medium", "hard", "quit", "?"]
+    SHORTCUTS: list[int] = [ord(c) for c in "emaq?"]
     SHORTCUT_POS = [2, 8, 17, 22, 28]
     y: int
     _cursor: Cursor
@@ -149,8 +146,8 @@ class EdComponent:
         return ":[" + "][".join(self.CHOICES) + "]"
 
     @property
-    def str_parts(self) -> List[Tuple[str, int]]:
-        ret: List[Tuple[str, int]] = []
+    def str_parts(self) -> list[tuple[str, int]]:
+        ret: list[tuple[str, int]] = []
         post = str(self)
         for shortcut in self.SHORTCUTS:
             pre, in_, post = post.partition(chr(shortcut))
@@ -186,8 +183,8 @@ class EdComponent:
         self._cursor = Cursor(self.cursor.y, x)
         return self
 
-    def handle_keypress(self, key: int) -> Optional[Cursor]:
-        cursor: Optional[Cursor] = self.cursor
+    def handle_keypress(self, key: int) -> Cursor | None:
+        cursor: Cursor | None = self.cursor
         if key == ord("\n"):
             cursor = None
         elif key in self.SHORTCUTS:
@@ -279,7 +276,7 @@ class GameApp:
                 more_cells = more_cells.difference(set(swath))
                 swath.extend(more_cells)
 
-    def _reveal_cell(self, cursor: Optional[Cursor] = None) -> None:
+    def _reveal_cell(self, cursor: Cursor | None = None) -> None:
         cursor = cursor or self.cursor
         cell = self._cell_at(cursor)
         if not cell.is_flag:
@@ -290,7 +287,7 @@ class GameApp:
         x, y = cursor.to_model()
         return self.game.board[y][x]
 
-    def _redraw_cell(self, cursor: Optional[Cursor] = None) -> None:
+    def _redraw_cell(self, cursor: Cursor | None = None) -> None:
         cursor = cursor or self.cursor
         cell = self._cell_at(cursor)
         v = FLAG_CELL_STR if cell.is_flag else CELL_STR
@@ -302,7 +299,7 @@ class GameApp:
         self.stdscr.move(*self.cursor)
 
 
-def ensure_ord(c: Union[int, str]) -> int:
+def ensure_ord(c: int | str) -> int:
     return c if isinstance(c, int) else ord(c)
 
 
@@ -369,7 +366,7 @@ def async_input(stdscr: "curses._CursesWindow") -> Generator[str, None, None]:
             start_time = datetime.now()
 
 
-def ed_choose(app: GameApp) -> Optional[str]:
+def ed_choose(app: GameApp) -> str | None:
     choices = ["_e_asy", "_m_edium", "h_a_rd", "_q_uit", "_?_"]
     shortcuts = list("emaq?")
     positions = [2, 8, 17, 22, 28]
@@ -406,7 +403,7 @@ def debug(app: GameApp, msg: str) -> None:
     app.stdscr.move(*cursor)
 
 
-def main(seed: int = typer.Option(0, help="seed for repeatable game")) -> int:
+def main(seed: int = 0) -> int:
     if seed:
         game.random.seed(seed)
     try:
@@ -416,9 +413,5 @@ def main(seed: int = typer.Option(0, help="seed for repeatable game")) -> int:
         return 0
 
 
-def run() -> None:
-    exit(typer.run(main))
-
-
 if __name__ == "__main__":
-    run()
+    raise SystemExit(main())

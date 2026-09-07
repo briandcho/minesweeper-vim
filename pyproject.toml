@@ -30,7 +30,7 @@ optional-dependencies.dev = [
   "pytest-cov",
   "pytest-mock",
 ]
-scripts.minesweeper-vim = "minesweeper_vim:main"
+scripts.minesweeper-vim = "minesweeper_vim.__main__:main"
 
 [tool.setuptools]
 packages.find.exclude = [ "tests", "tests.*" ]
