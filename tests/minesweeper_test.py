@@ -2,7 +2,8 @@ import sys
 from time import sleep
 
 import pytest
-from hecate.hecate import Runner
+
+from tests.pty_runner import Runner
 
 
 def test_minesweeper_quit(runner: Runner) -> None:
@@ -57,8 +58,10 @@ def test_win(runner: Runner) -> None:
     assert runner.screenshot().split("\n")[0].endswith("000s")
     runner.write("x")
     sleep(1)
+    # 34 keystrokes at this game's ~80ms-per-keypress input-loop latency need ~2.7s
+    # to fully process; the default 1s await_text budget isn't enough for that many.
     runner.write("jxjxllxkkxlllxM$xbxwxjxjxjxhxkxhjx")
-    runner.await_text("You win!")
+    runner.await_text("You win!", timeout=5)
     assert not runner.screenshot().split("\n")[0].endswith("000s")
 
 

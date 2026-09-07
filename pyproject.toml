@@ -20,16 +20,17 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
 ]
-urls.Homepage = "https://github.com/briandcho/minesweeper-vim"
 dynamic = [
   "version",
 ]
 optional-dependencies.dev = [
   "covdefaults",
-  "hecate",
+  "pexpect",
+  "pyte",
   "pytest-cov",
   "pytest-mock",
 ]
+urls.Homepage = "https://github.com/briandcho/minesweeper-vim"
 scripts.minesweeper-vim = "minesweeper_vim.__main__:main"
 
 [tool.setuptools]
@@ -40,6 +41,9 @@ package-dir = { "" = "." }
 version_scheme = "guess-next-dev"
 local_scheme = "node-and-date"
 
+[tool.ruff]
+line-length = 100
+
 [tool.mypy]
 disallow_any_generics = true
 disallow_untyped_defs = true
@@ -48,9 +52,6 @@ check_untyped_defs = true
 warn_redundant_casts = true
 warn_unused_ignores = true
 overrides = [ { module = "tests.*", disallow_untyped_defs = false } ]
-
-[tool.ruff]
-line-length = 100
 
 [tool.coverage]
 run.plugins = [ "covdefaults" ]
@@ -69,7 +70,7 @@ env.pre-commit.commands = [
     "run",
     "--all-files",
     "--show-diff-on-failure",
-    { replace = "posargs", default = [ ], extend = true },
+    { replace = "posargs", default = [], extend = true },
   ],
 ]
 env.update_deps.description = "Update requirements*.txt files and pre-commit hooks"
