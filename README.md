@@ -53,14 +53,12 @@ minesweeper-vim -V
 
 ### First-time setup
 
-A freshly generated project needs two one-time steps before `tox` will work:
+If this isn't already a git repo, run `git init` before `tox` — `setuptools-scm` computes the
+package version from git metadata and errors out (`ERROR setuptools-scm was unable to detect
+version`) outside a git repo.
 
-1. `git init` (if this isn't already a git repo) — `setuptools-scm` computes the package version
-   from git metadata and errors out (`ERROR setuptools-scm was unable to detect version`) outside
-   a git repo.
-2. `tox -e update_deps` — generates `requirements.txt`/`requirements-dev.txt` via `pip-compile`.
-   These aren't shipped by the template (they're pinned to whatever resolves them), but `tox -e py`
-   and bare `tox` install from `requirements-dev.txt`, so it must exist first.
+`requirements.txt`/`requirements-dev.txt` (pinned via `pip-compile`) are checked in, so `tox -e py`
+and bare `tox` can install from them directly. Run `tox -e update_deps` to refresh the pins.
 
 ### Install pre-commit hooks (including commit message checks)
 
