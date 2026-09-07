@@ -1,3 +1,4 @@
+import os
 import sys
 from collections.abc import Generator
 from time import sleep
@@ -5,6 +6,17 @@ from time import sleep
 import pytest
 
 from tests.pty_runner import Runner
+
+# The game normally runs as `python -m minesweeper_vim`, but that subprocess is
+# invisible to a `coverage run` in the parent pytest process. When tox sets
+# COVERAGE_RUN (see [tool.tox] env_run_base in pyproject.toml), route it through
+# `coverage run --parallel-mode` instead, so it writes its own coverage data file
+# (parallel mode, configured in [tool.coverage]) that `coverage combine` picks up.
+GAME_COMMAND = (
+    [sys.executable, "-m", "coverage", "run", "--parallel-mode", "-m", "minesweeper_vim"]
+    if os.environ.get("COVERAGE_RUN")
+    else [sys.executable, "-m", "minesweeper_vim"]
+)
 
 
 def test_minesweeper_quit(runner: Runner) -> None:
@@ -93,5 +105,5 @@ def runner() -> Generator[Runner]:
              1  *  2  4  *  3
              1  1  1  2  *  2
     """
-    with Runner(sys.executable, "-m", "minesweeper_vim", "--seed", "1") as h:
+    with Runner(*GAME_COMMAND, "--seed", "1") as h:
         yield h

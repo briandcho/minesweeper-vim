@@ -54,6 +54,12 @@ warn_unused_ignores = true
 overrides = [ { module = "tests.*", disallow_untyped_defs = false } ]
 
 [tool.coverage]
+# The e2e game tests spawn the app as a real subprocess (pexpect, for an
+# authentic curses/tty session); parallel mode lets that subprocess write its
+# own coverage data file (see tests/minesweeper_test.py's COVERAGE_RUN check)
+# instead of clobbering the main process's, so `coverage combine` can merge
+# them into one report that actually reflects the game loop's coverage.
+run.parallel = true
 run.plugins = [ "covdefaults" ]
 
 [tool.tox]
@@ -87,9 +93,11 @@ env_run_base.description = "Run pytest with coverage"
 env_run_base.package = "editable"
 env_run_base.deps = [ "-r requirements-dev.txt" ]
 env_run_base.pass_env = [ "PYTHONPATH" ]
+env_run_base.set_env = { COVERAGE_RUN = "1" }
 env_run_base.commands = [
   [ "coverage", "erase" ],
   [ "coverage", "run", "-m", "pytest" ],
+  [ "coverage", "combine" ],
   [ "coverage", "report", "--show-missing" ],
 ]
 
