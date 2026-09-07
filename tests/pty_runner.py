@@ -4,9 +4,15 @@ import os
 import time
 from collections.abc import Generator
 from types import TracebackType
+from typing import TYPE_CHECKING
 
 import pexpect
 import pyte
+
+if TYPE_CHECKING:
+    # typing.Self needs Python 3.11+; this project supports 3.10+, so only
+    # import it for type checking, never at runtime.
+    from typing import Self
 
 DEFAULT_WIDTH = 80
 DEFAULT_HEIGHT = 24
@@ -113,7 +119,7 @@ class Runner:
                 return
         raise Timeout("Timeout while waiting for process to exit")
 
-    def _poll_until_timeout(self, timeout: float | None) -> Generator[None, None, None]:
+    def _poll_until_timeout(self, timeout: float | None) -> Generator[None]:
         if timeout is None:
             timeout = self.default_timeout
         start = time.monotonic()
@@ -128,7 +134,7 @@ class Runner:
         if self.child.isalive():
             self.child.terminate(force=True)
 
-    def __enter__(self) -> Runner:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(

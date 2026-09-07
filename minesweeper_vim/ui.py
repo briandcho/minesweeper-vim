@@ -3,8 +3,8 @@ import time
 from collections import namedtuple
 from collections.abc import Generator
 from curses import KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_UP
-from datetime import datetime
-from typing import Protocol
+from datetime import datetime, timezone
+from typing import ClassVar, Protocol
 
 from minesweeper_vim import game
 from minesweeper_vim.game import Cell, Game
@@ -133,9 +133,9 @@ class BoardComponent:
 
 
 class EdComponent:
-    CHOICES: list[str] = ["easy", "medium", "hard", "quit", "?"]
-    SHORTCUTS: list[int] = [ord(c) for c in "emaq?"]
-    SHORTCUT_POS = [2, 8, 17, 22, 28]
+    CHOICES: ClassVar[list[str]] = ["easy", "medium", "hard", "quit", "?"]
+    SHORTCUTS: ClassVar[list[int]] = [ord(c) for c in "emaq?"]
+    SHORTCUT_POS: ClassVar[list[int]] = [2, 8, 17, 22, 28]
     y: int
     _cursor: Cursor
 
@@ -237,7 +237,7 @@ class GameApp:
 
     def toggle_keypress_handler(self) -> None:
         is_ed = self.keypress_handler == self.ed
-        self.keypress_handler = self.board if is_ed else self.board
+        self.keypress_handler = self.board if is_ed else self.ed
 
     def move_to(self, cursor: Cursor) -> None:
         self.cursor = cursor
@@ -357,14 +357,14 @@ def async_input(stdscr: "curses.window") -> Generator[str, None, None]:
         try:
             time.sleep(0.04)
             if start_time:
-                elapsed_time = datetime.now() - start_time
+                elapsed_time = datetime.now(timezone.utc) - start_time
                 overwrite_str(stdscr, 26, 0, f"{elapsed_time.seconds:03}")
             c = stdscr.get_wch()
             yield str(KEYMAP.get(c if isinstance(c, int) else ord(c), c))
         except curses.error:
             continue
         if not start_time:
-            start_time = datetime.now()
+            start_time = datetime.now(timezone.utc)
 
 
 def ed_choose(app: GameApp) -> str | None:

@@ -14,7 +14,3 @@ class KeyMap:
 
 
 KEYMAP = {"l": cursor_left}
-
-
-def test_keymap():
-    reveal_type(KEYMAP)
