@@ -23,7 +23,7 @@ DEFAULT_WAIT_INTERVAL = 0.01
 # return mid-redraw.
 SETTLE_QUIET_PERIOD = 0.2
 SETTLE_MAX_WAIT = 2.0
-# How long to give the child to exit gracefully after SIGINT (see shutdown())
+# How long to give the child to exit gracefully after SIGTERM (see shutdown())
 # before escalating to SIGKILL.
 GRACEFUL_SHUTDOWN_WAIT = 2.5
 
@@ -132,13 +132,15 @@ class Runner:
         self._shutdown_called = True
         if not self.child.isalive():
             return
-        # SIGINT rather than pexpect's default terminate() (which tries SIGHUP
-        # first): Python's default handler turns SIGINT into a catchable
-        # KeyboardInterrupt, so the child unwinds through its normal interpreter
-        # shutdown - including coverage's atexit-registered data save when
-        # COVERAGE_RUN wraps it (see tests/minesweeper_test.py). SIGHUP/SIGKILL
-        # have no such handler and would just cut the process off mid-write.
-        self.child.kill(signal.SIGINT)
+        # SIGTERM, not SIGINT: this app's curses.wrapper() cleanup (endwin())
+        # can hang indefinitely under a pexpect-controlled pty with nothing on
+        # the other end to answer ncurses' terminal queries, so a normal
+        # Python-level exception unwind (which SIGINT would trigger) isn't
+        # reliable here. When COVERAGE_RUN wraps the child (see
+        # tests/minesweeper_test.py), coverage's own `sigterm = true` handler
+        # (configured in [tool.coverage]) saves its data directly from a
+        # SIGTERM handler instead, sidestepping the app entirely.
+        self.child.kill(signal.SIGTERM)
         deadline = time.monotonic() + GRACEFUL_SHUTDOWN_WAIT
         while time.monotonic() < deadline:
             if not self.child.isalive():

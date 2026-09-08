@@ -60,6 +60,13 @@ overrides = [ { module = "tests.*", disallow_untyped_defs = false } ]
 # them into one report that actually reflects the game loop's coverage.
 run.parallel = true
 run.plugins = [ "covdefaults" ]
+# The subprocess is killed (not exited voluntarily) once a test is done with
+# it; curses' own cleanup (endwin()) can hang under a pexpect-controlled pty
+# with no real terminal responding to it, so relying on a normal Python
+# exception/atexit unwind to save coverage data isn't reliable. sigterm=true
+# makes coverage.py save its data directly from a SIGTERM handler instead
+# (see tests/pty_runner.py's Runner.shutdown()).
+run.sigterm = true
 
 [tool.tox]
 env_list = [ "pre-commit", "py" ]
