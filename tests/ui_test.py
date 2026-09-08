@@ -55,3 +55,43 @@ def test_app_handle_keypress(
     app = ui.GameApp(mock_scr, ui.game.create_game(*ui.game.EASY))
     app.handle_keypress()
     assert app.cursor == cursor
+
+
+def test_ed_choose_next_and_prev_clamp_at_boundaries() -> None:
+    ed = ui.EdComponent(1)
+    assert ed.choice == "easy"
+    for _ in range(len(ed.CHOICES) - 1):
+        ed.choose_next()
+    assert ed.choice == "?"
+    ed.choose_next()  # already at the last choice: no-op branch
+    assert ed.choice == "?"
+    for _ in range(len(ed.CHOICES) - 1):
+        ed.choose_prev()
+    assert ed.choice == "easy"
+    ed.choose_prev()  # already at the first choice: no-op branch
+    assert ed.choice == "easy"
+
+
+def test_mark_cell_noop_when_already_swept(mocker: MockerFixture) -> None:
+    mock_scr = mocker.MagicMock()
+    app = ui.GameApp(mock_scr, ui.game.create_game(*ui.game.EASY))
+    app.move_to(app.board.cursor)  # GameApp starts with the cursor on the ed prompt
+    app.active_cell.is_swept = True
+    app.mark_cell()
+    assert app.active_cell.is_flag is False
+
+
+def test_main_without_seed_skips_seeding(mocker: MockerFixture) -> None:
+    mock_wrapper = mocker.patch("minesweeper_vim.ui.curses.wrapper", return_value=0)
+    mock_seed = mocker.patch("minesweeper_vim.ui.game.random.seed")
+    assert ui.main(0) == 0
+    mock_seed.assert_not_called()
+    mock_wrapper.assert_called_once()
+
+
+def test_main_with_seed_seeds_random(mocker: MockerFixture) -> None:
+    mock_wrapper = mocker.patch("minesweeper_vim.ui.curses.wrapper", return_value=0)
+    mock_seed = mocker.patch("minesweeper_vim.ui.game.random.seed")
+    assert ui.main(42) == 0
+    mock_seed.assert_called_once_with(42)
+    mock_wrapper.assert_called_once()

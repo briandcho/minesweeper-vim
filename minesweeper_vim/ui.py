@@ -347,7 +347,7 @@ def c_main(stdscr: "curses.window") -> int:
             app.move_to(Cursor.from_model(*mv[c](*app.cursor.to_model())))
         else:
             debug(app, f"{c} not implemented")
-    return 0
+    return 0  # pragma: no cover - async_input() never stops iterating on its own
 
 
 def async_input(stdscr: "curses.window") -> Generator[str, None, None]:
@@ -383,7 +383,7 @@ def ed_choose(app: GameApp) -> str | None:
         elif c in shortcuts:
             choice = shortcuts.index(c)
         app.move_to(Cursor(y, positions[choice]))
-    return None
+    return None  # pragma: no cover - async_input() never stops iterating on its own
 
 
 def bye(app: GameApp, msg: str) -> None:

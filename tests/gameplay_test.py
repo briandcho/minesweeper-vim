@@ -114,3 +114,8 @@ def test_prev_unswept_prev_row_skip_1() -> None:
 )
 def test_number_board(board: list[list[str]], numbered: list[list[str]]) -> None:
     assert game.number_board(board) == numbered
+
+
+def test_get_unmarked_neighbor_cells_empty_when_flag_count_mismatched() -> None:
+    board = game._to_cells([[" ", " "], ["1", " "]])
+    assert game.get_unmarked_neighbor_cells(board, 0, 1) == []
