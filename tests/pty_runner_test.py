@@ -8,16 +8,22 @@ from tests.pty_runner import Runner, Timeout
 SLEEP_5S = [sys.executable, "-c", "import time; time.sleep(5)"]
 
 
-def test_await_text_times_out_when_text_never_appears() -> None:
-    with Runner(*SLEEP_5S, wait_interval=0.05) as runner:
-        with pytest.raises(Timeout):
-            runner.await_text("this text never appears", timeout=0.3)
+def test_await_text_times_out_when_text_never_appears(mocker: MockerFixture) -> None:
+    # _pump() waits up to SETTLE_MAX_WAIT for the *first* byte before giving up,
+    # since it can't tell "nothing is coming" apart from "still latent" - fine for
+    # the real game (which always outputs something quickly) but it would make
+    # this test wait out the full default budget against a silent process.
+    mocker.patch("tests.pty_runner.SETTLE_QUIET_PERIOD", 0.05)
+    mocker.patch("tests.pty_runner.SETTLE_MAX_WAIT", 0.15)
+    with Runner(*SLEEP_5S, wait_interval=0.05) as runner, pytest.raises(Timeout):
+        runner.await_text("this text never appears", timeout=0.3)
 
 
-def test_await_exit_times_out_when_process_still_running() -> None:
-    with Runner(*SLEEP_5S, wait_interval=0.05) as runner:
-        with pytest.raises(Timeout):
-            runner.await_exit(timeout=0.3)
+def test_await_exit_times_out_when_process_still_running(mocker: MockerFixture) -> None:
+    mocker.patch("tests.pty_runner.SETTLE_QUIET_PERIOD", 0.05)
+    mocker.patch("tests.pty_runner.SETTLE_MAX_WAIT", 0.15)
+    with Runner(*SLEEP_5S, wait_interval=0.05) as runner, pytest.raises(Timeout):
+        runner.await_exit(timeout=0.3)
 
 
 def test_shutdown_is_idempotent() -> None:
