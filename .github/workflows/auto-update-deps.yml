@@ -35,10 +35,11 @@ jobs:
 
       - name: Find existing auto-update PR
         id: find_pr
-        uses: peter-evans/find-pull-request@v3
-        with:
-          branch: chore/auto-update-deps
-          state: open
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pr_number=$(gh pr list --repo "$GITHUB_REPOSITORY" --head chore/auto-update-deps --state open --json number --jq '.[0].number // empty')
+          echo "pull-request-number=$pr_number" >> "$GITHUB_OUTPUT"
 
       - name: Close previous auto-update PR (if any)
         if: steps.find_pr.outputs.pull-request-number != ''
