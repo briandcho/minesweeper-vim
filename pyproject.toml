@@ -52,6 +52,11 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 overrides = [ { module = "tests.*", disallow_untyped_defs = false } ]
 
+[tool.pytest]
+ini_options.markers = [
+  "slow: spawns the game as a real subprocess; deferred to `tox -e full` / pre-push / CI",
+]
+
 [tool.coverage]
 # The e2e game tests spawn the app as a real subprocess (pexpect, for an
 # authentic curses/tty session); parallel mode lets that subprocess write its
@@ -70,6 +75,7 @@ run.sigterm = true
 
 [tool.tox]
 env_list = [ "pre-commit", "py" ]
+env.full.description = "Run the full test suite (including slow e2e tests) with coverage"
 env.pre-commit.description = "Run pre-commit hooks (excludes pre-push-only checks like pip-audit, checkov)"
 env.pre-commit.skip_install = true
 env.pre-commit.deps = [ "pre-commit" ]
@@ -84,6 +90,15 @@ env.pre-commit.commands = [
     "--show-diff-on-failure",
     { replace = "posargs", default = [], extend = true },
   ],
+]
+env.py.description = "Run the fast (non-e2e) tests only, no coverage - for local iteration"
+# The "slow" e2e tests (stages: [pre-push], same as pip-audit/checkov above) are
+# deliberately excluded here to keep local iteration fast; coverage is skipped too
+# since its numbers would be meaningless without the e2e tests that own most of
+# ui.py's coverage. They still run via `tox -e full`, on `git push` (if the
+# pre-push hook type is installed), and as CI's test gate.
+env.py.commands = [
+  [ "pytest", "-m", "not slow" ],
 ]
 env.update_deps.description = "Update requirements*.txt files and pre-commit hooks"
 env.update_deps.skip_install = true

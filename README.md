@@ -91,10 +91,17 @@ cz commit
 
 This project uses `tox` to run tests and checks consistently across environments.
 
-- Run tests and coverage:
+- Run the fast tests (no e2e, no coverage) for quick local iteration:
 
 ```sh
 tox -e py
+```
+
+- Run the full suite, including the slow e2e tests that spawn the game as a real subprocess, with
+  the 100% coverage gate:
+
+```sh
+tox -e full
 ```
 
 - Run all pre-commit hooks (format, lint, type-check, security, etc.):
@@ -103,12 +110,15 @@ tox -e py
 tox -e pre-commit
 ```
 
-- Run the pre-push-only hooks too (`pip-audit`, `checkov`) by passing extra args through to
-  `pre-commit run` after `--`:
+- Run the pre-push-only checks too (`pip-audit`, `checkov`, and the `tox -e full` test suite) by
+  passing extra args through to `pre-commit run` after `--`:
 
 ```sh
 tox -e pre-commit -- --hook-stage pre-push
 ```
+
+`tox -e full` also runs automatically on `git push` (if the pre-push hook type is installed, same
+as `pip-audit`/`checkov`) and is what CI runs — `tox -e py` is only for local iteration.
 
 - Update pinned dependencies and pre-commit hooks:
 

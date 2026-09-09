@@ -43,6 +43,7 @@ def test_game_command_plain_without_coverage_run(monkeypatch: pytest.MonkeyPatch
     assert game_command() == [sys.executable, "-m", "minesweeper_vim"]
 
 
+@pytest.mark.slow
 def test_minesweeper_quit(runner: Runner) -> None:
     runner.await_text("MiNeSwEePeR")
     runner.write(":q")
@@ -51,6 +52,7 @@ def test_minesweeper_quit(runner: Runner) -> None:
     runner.await_exit()
 
 
+@pytest.mark.slow
 def test_minesweeper_movement_and_flag_cell_invincible(runner: Runner) -> None:
     runner.await_text("[ ]" * 10)
     runner.press("Enter")
@@ -58,6 +60,7 @@ def test_minesweeper_movement_and_flag_cell_invincible(runner: Runner) -> None:
     assert runner.screenshot().strip().endswith("[x][ ]")
 
 
+@pytest.mark.slow
 def test_reveal_spaces(runner: Runner) -> None:
     runner.await_text(":[easy]")
     runner.press("Enter")
@@ -68,6 +71,7 @@ def test_reveal_spaces(runner: Runner) -> None:
     ]
 
 
+@pytest.mark.slow
 def test_reveal_unmarked(runner: Runner) -> None:
     runner.await_text("[ ]" * 10)
     runner.press("Enter")
@@ -78,6 +82,7 @@ def test_reveal_unmarked(runner: Runner) -> None:
     ]
 
 
+@pytest.mark.slow
 def test_reveal_bad_mark_loses(runner: Runner) -> None:
     runner.await_text("[ ]" * 10)
     runner.press("Enter")
@@ -89,6 +94,7 @@ def test_reveal_bad_mark_loses(runner: Runner) -> None:
     ]
 
 
+@pytest.mark.slow
 def test_win(runner: Runner) -> None:
     runner.await_text("[ ]" * 10)
     runner.press("Enter")
@@ -102,11 +108,13 @@ def test_win(runner: Runner) -> None:
     assert not runner.screenshot().split("\n")[0].endswith("000s")
 
 
+@pytest.mark.slow
 def test_ed_mode_set_difficulty_when_game_not_started(runner: Runner) -> None:
     runner.await_text("[ ]" * 10)
     runner.await_text(":[easy][medium][hard][quit][?]")
 
 
+@pytest.mark.slow
 def test_ed_mode_reopened_mid_game_can_quit(runner: Runner) -> None:
     # The ed (difficulty-menu) prompt text is erased by clrtobot() once the game
     # starts and isn't redrawn by ed_choose() itself, so a reopened ":" prompt
@@ -119,6 +127,7 @@ def test_ed_mode_reopened_mid_game_can_quit(runner: Runner) -> None:
     runner.await_exit()
 
 
+@pytest.mark.slow
 def test_ed_mode_navigate_with_next_and_prev(runner: Runner) -> None:
     runner.await_text(":[easy][medium][hard][quit][?]")
     runner.write("w")  # next: medium
@@ -127,6 +136,7 @@ def test_ed_mode_navigate_with_next_and_prev(runner: Runner) -> None:
     runner.await_text("[ ]" * 10)  # easy's board is 10 cells wide
 
 
+@pytest.mark.slow
 def test_unimplemented_key_shows_debug_message(runner: Runner) -> None:
     runner.await_text("[ ]" * 10)
     runner.press("Enter")
@@ -134,6 +144,7 @@ def test_unimplemented_key_shows_debug_message(runner: Runner) -> None:
     runner.await_text("z not implemented")
 
 
+@pytest.mark.slow
 @pytest.mark.skip(
     reason=(
         "Assumes the header timer stays at 000s while the difficulty menu is open, "

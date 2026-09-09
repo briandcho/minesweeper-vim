@@ -29,6 +29,20 @@ repos:
         name: pip-audit dependency vulnerability scanner
         args: ["-r", "requirements.txt"]
         stages: [pre-push]
+-   repo: local
+    hooks:
+    -   id: tox-full
+        name: full test suite (slow e2e tests + 100% coverage gate)
+        # Deferred to pre-push (same reason as checkov/pip-audit above): the slow
+        # e2e tests in tests/minesweeper_test.py each spawn the game as a real
+        # subprocess, so `tox -e py` (what local iteration/tox -e pre-commit's
+        # sibling env runs) stays fast. Still runs on `git push` and as CI's
+        # test gate (see .github/workflows/ci.yml).
+        entry: tox -e full
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
