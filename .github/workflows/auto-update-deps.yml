@@ -23,7 +23,9 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          # Keep in sync with the highest version in ci.yml's test matrix,
+          # so lockfiles are regenerated with the same interpreter CI tests against.
+          python-version: '3.13'
 
       - name: Install tox
         run: |
