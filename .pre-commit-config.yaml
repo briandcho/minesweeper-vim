@@ -14,7 +14,7 @@ repos:
         name: detect-secrets scan for secrets
         require_serial: true
 -   repo: https://github.com/bridgecrewio/checkov
-    rev: 3.3.16
+    rev: 3.3.17
     hooks:
     -   id: checkov
         name: checkov IaC security scanner
@@ -53,7 +53,7 @@ repos:
     -   id: check-toml
     -   id: debug-statements
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.6
+    rev: v0.16.7
     hooks:
     -   id: ruff  # includes flake8 functionality
         args: [--fix, --exit-non-zero-on-fix]
@@ -73,7 +73,7 @@ repos:
         args: [--py311-plus]
 
 -   repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.18.0
+    rev: v4.18.1
     hooks:
     -   id: commitizen
         stages: [commit-msg]
